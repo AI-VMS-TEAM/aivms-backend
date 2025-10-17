@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AIVMS Setup</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2 { color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .header-controls { display: flex; justify-content: space-between; align-items: center; }
+        input { width: 95%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ddd; font-size: 1em; }
+        button { padding: 10px 15px; border: none; background-color: #007bff; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px; font-size: 1em; }
+        button:hover { background-color: #0056b3; }
+        .nav-button { background-color: #28a745; text-decoration: none; }
+        .nav-button:hover { background-color: #218838; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #eee; padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        #error, #scanStatus { min-height: 20px; }
+        #error { color: red; font-weight: bold; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-controls">
+            <h1>AIVMS Camera Management</h1>
+            <a href="/dashboard.html" class="nav-button">Go to Live Dashboard</a>
+        </div>
+
+        <h2>Discover Cameras on Network</h2>
+        <button id="scanButton">Scan for Cameras</button>
+        <p id="scanStatus"></p>
+        <ul id="discoveredList"></ul>
+        <hr>
+        
+        <h2>Add a New Camera Manually</h2>
+        <form id="addCameraForm">
+            <input type="text" id="name" placeholder="Camera Name (e.g., Front Door)" required>
+            <input type="text" id="ip" placeholder="IP Address (e.g., 192.168.1.100)" required>
+            <input type="text" id="port" placeholder="Port (e.g., 554, leave blank for default)">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <input type="text" id="path" placeholder="RTSP Path (e.g., profile2/media.smp)">
+            <button type="submit">Verify & Add Camera</button>
+        </form>
+        <p id="error"></p>
+
+        <h2>Configured Cameras</h2>
+        <ul id="cameraList"></ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cameraList = document.getElementById('cameraList');
+            const addCameraForm = document.getElementById('addCameraForm');
+            const errorP = document.getElementById('error');
+            const scanButton = document.getElementById('scanButton');
+            const scanStatus = document.getElementById('scanStatus');
+            const discoveredList = document.getElementById('discoveredList');
+
+            async function fetchAndDisplayCameras() {
+                const response = await fetch('/api/cameras');
+                const cameras = await response.json();
+                
+                cameraList.innerHTML = '';
+                cameras.forEach(cam => {
+                    const li = document.createElement('li');
+                    li.textContent = `${cam.name} - ${cam.ip}`;
+                    cameraList.appendChild(li);
+                });
+            }
+
+            addCameraForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                errorP.textContent = '';
+                const newCamera = { name: document.getElementById('name').value, ip: document.getElementById('ip').value, port: document.getElementById('port').value, username: document.getElementById('username').value, password: document.getElementById('password').value, path: document.getElementById('path').value };
+                const response = await fetch('/api/add_camera', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCamera) });
+                const result = await response.json();
+                if (response.ok) {
+                    addCameraForm.reset();
+                    fetchAndDisplayCameras();
+                } else {
+                    errorP.textContent = `Error: ${result.message}`;
+                }
+            });
+
+            scanButton.addEventListener('click', async () => {
+                scanStatus.textContent = 'Scanning... Please wait.';
+                discoveredList.innerHTML = '';
+                scanButton.disabled = true;
+                try {
+                    const response = await fetch('/api/discover');
+                    const data = await response.json();
+                    scanStatus.textContent = `Found ${data.cameras.length} device(s). Click an IP to pre-fill the form.`;
+                    data.cameras.forEach(cam => {
+                        const li = document.createElement('li');
+                        li.textContent = `Found device at IP: ${cam.ip}`;
+                        li.style.cursor = 'pointer';
+                        li.addEventListener('click', () => {
+                            document.getElementById('ip').value = cam.ip;
+                        });
+                        discoveredList.appendChild(li);
+                    });
+                } catch (e) {
+                    scanStatus.textContent = 'An error occurred during scanning.';
+                } finally {
+                    scanButton.disabled = false;
+                }
+            });
+
+            fetchAndDisplayCameras();
+        });
+    </script>
+</body>
+</html>

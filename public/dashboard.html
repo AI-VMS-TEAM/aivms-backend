@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AIVMS Dashboard (Low-Latency)</title>
+    <style>
+        body { margin: 0; background-color: #1a1a1a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        #gridContainer { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; width: 90vw; height: 90vh; max-width: 1600px; max-height: 900px; aspect-ratio: 16 / 9; }
+        .videoCell { position: relative; background-color: #000; border: 1px solid #444; display: flex; justify-content: center; align-items: center; color: #555; font-size: 1em; overflow: hidden; }
+        .videoCell video { width: 100%; height: 100%; object-fit: cover; }
+        .fullscreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
+        .camera-name { position: absolute; bottom: 5px; left: 5px; color: white; background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 3px; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <div id="gridContainer">
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('gridContainer');
+            let currentCameraCount = 0;
+
+            function buildCameraCell(cam) {
+                const cell = document.createElement('div');
+                cell.className = 'videoCell';
+                cell.id = `cell-${cam.id}`;
+                
+                const video = document.createElement('video');
+                video.id = `videoPlayer-${cam.id}`;
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+
+                const nameOverlay = document.createElement('div');
+                nameOverlay.className = 'camera-name';
+                nameOverlay.textContent = cam.name;
+
+                cell.appendChild(video);
+                cell.appendChild(nameOverlay);
+                grid.appendChild(cell);
+
+                let hls = null;
+                let isFullscreen = false;
+
+                const mainStreamUrl = `/hls/cam${cam.id}_main/stream.m3u8`;
+                const subStreamUrl = `/hls/cam${cam.id}_sub/stream.m3u8`;
+                
+                const llHlsConfig = {
+                    lowLatencyMode: true,
+                    backBufferLength: 0,
+                    liveSyncDurationCount: 2
+                };
+
+                function loadStream(url) {
+                    if (hls) hls.destroy();
+                    if (Hls.isSupported()) {
+                        hls = new Hls(llHlsConfig);
+                        hls.loadSource(url);
+                        hls.attachMedia(video);
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = url;
+                    }
+                }
+
+                cell.addEventListener('dblclick', () => {
+                    isFullscreen = !isFullscreen;
+                    cell.classList.toggle('fullscreen', isFullscreen);
+                    loadStream(isFullscreen ? mainStreamUrl : subStreamUrl);
+                });
+
+                loadStream(subStreamUrl);
+            }
+            
+            async function updateDashboard() {
+                try {
+                    const response = await fetch('/api/cameras');
+                    const cameras = await response.json();
+                    if (cameras.length !== currentCameraCount) {
+                        grid.innerHTML = '';
+                        cameras.forEach(buildCameraCell);
+                        currentCameraCount = cameras.length;
+                    }
+                } catch (e) {
+                    console.error("Failed to update dashboard:", e);
+                }
+            }
+            
+            updateDashboard();
+            setInterval(updateDashboard, 5000);
+        });
+    </script>
+</body>
+</html>
