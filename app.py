@@ -26,6 +26,9 @@ from controllers.tracking_routes import tracking_bp, set_tracking_service
 from controllers.zone_routes import zone_bp, set_zone_service
 from controllers.auth_routes import auth_bp, set_db_path
 
+# Environment-based configuration
+DETECTION_ENABLED = os.environ.get('DETECTION_ENABLED', 'true').lower() == 'true'
+
 # --- Initialization ---
 app = Flask(__name__, static_folder='public', static_url_path='')
 app.config['SECRET_KEY'] = 'aivms-secret-key-change-in-production'
@@ -101,50 +104,56 @@ tracking_service = TrackingService(
 )
 
 # Initialize Detection Service (Vision 29) with ByteTrack tracking and pose detection
-detection_service = DetectionService(
-    db_path=db_path,
-    model_name=config.get('Detection', 'model', fallback='yolov8s'),
-    confidence_threshold=float(config.get('Detection', 'confidence_threshold', fallback='0.5')),
-    gpu_enabled=config.getboolean('Detection', 'gpu_enabled', fallback=True),
-    tracking_enabled=tracking_enabled,
-    tracker_config='config/bytetrack.yaml',
-    pose_enabled=True,  # Enable pose detection for persons
-    kalman_smoothing=True  # Enable Kalman smoothing for stable boxes
-)
-detection_service.start()
-
-print(f"✅ Detection service started with {'ByteTrack tracking' if tracking_enabled else 'detection only'}")
-
-# Initialize Detection-Tracking Integration
-integration = DetectionTrackingIntegration(detection_service, tracking_service)
-integration.start()
-
-# Set detection callback to feed detections to tracking
-detection_service.set_detections_callback(integration.add_detections)
-
-# Set WebSocket callback for real-time detection streaming
-detection_service.set_websocket_callback(broadcast_detections)
-
-# Set zone event callback for real-time zone event broadcasting (Vision 31)
-tracking_service.set_zone_event_callback(broadcast_zone_event)
-
-# Initialize Frame Extractors for each camera
+detection_service = None
+integration = None
 frame_extractors = {}
-detection_fps = float(config.get('Detection', 'detection_fps', fallback='2.0'))
-# Use environment variable for MediaMTX host (for Docker support)
-mediamtx_host = os.environ.get('MEDIAMTX_HOST', 'localhost')
-for camera in camera_manager.cameras:
-    camera_id = camera.get('name', '').lower().replace(' ', '_').replace('-', '_')
-    hls_url = f"http://{mediamtx_host}:8888/{camera_id}/index.m3u8"
-    extractor = FrameExtractor(
-        hls_url=hls_url,
-        camera_id=camera_id,
-        detection_service=detection_service,
-        extraction_fps=detection_fps
+
+if DETECTION_ENABLED:
+    detection_service = DetectionService(
+        db_path=db_path,
+        model_name=config.get('Detection', 'model', fallback='yolov8s'),
+        confidence_threshold=float(config.get('Detection', 'confidence_threshold', fallback='0.5')),
+        gpu_enabled=config.getboolean('Detection', 'gpu_enabled', fallback=True),
+        tracking_enabled=tracking_enabled,
+        tracker_config='config/bytetrack.yaml',
+        pose_enabled=True,  # Enable pose detection for persons
+        kalman_smoothing=True  # Enable Kalman smoothing for stable boxes
     )
-    extractor.start()
-    frame_extractors[camera_id] = extractor
-    print(f"Started frame extractor for {camera_id}")
+    detection_service.start()
+
+    print(f"✅ Detection service started with {'ByteTrack tracking' if tracking_enabled else 'detection only'}")
+
+    # Initialize Detection-Tracking Integration
+    integration = DetectionTrackingIntegration(detection_service, tracking_service)
+    integration.start()
+
+    # Set detection callback to feed detections to tracking
+    detection_service.set_detections_callback(integration.add_detections)
+
+    # Set WebSocket callback for real-time detection streaming
+    detection_service.set_websocket_callback(broadcast_detections)
+
+    # Set zone event callback for real-time zone event broadcasting (Vision 31)
+    tracking_service.set_zone_event_callback(broadcast_zone_event)
+
+    # Initialize Frame Extractors for each camera
+    detection_fps = float(config.get('Detection', 'detection_fps', fallback='2.0'))
+    # Use environment variable for MediaMTX host (for Docker support)
+    mediamtx_host = os.environ.get('MEDIAMTX_HOST', 'localhost')
+    for camera in camera_manager.cameras:
+        camera_id = camera.get('name', '').lower().replace(' ', '_').replace('-', '_')
+        hls_url = f"http://{mediamtx_host}:8888/{camera_id}/index.m3u8"
+        extractor = FrameExtractor(
+            hls_url=hls_url,
+            camera_id=camera_id,
+            detection_service=detection_service,
+            extraction_fps=detection_fps
+        )
+        extractor.start()
+        frame_extractors[camera_id] = extractor
+        print(f"Started frame extractor for {camera_id}")
+else:
+    print("⚠️ Detection service DISABLED (set DETECTION_ENABLED=true to enable)")
 
 # Initialize MediaMTX Index Service
 # Use the same storage path as the recording engine (D:\recordings)

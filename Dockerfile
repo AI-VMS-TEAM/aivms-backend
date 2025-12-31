@@ -99,12 +99,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Health check - increased start period for model loading
+HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Switch to non-root user
 USER appuser
 
-# Run with gunicorn for production
-CMD ["gunicorn", "--worker-class", "eventlet", "--workers", "1", "--bind", "0.0.0.0:3000", "--timeout", "120", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+# Run with gunicorn for production (eventlet required for Flask-SocketIO)
+CMD ["gunicorn", "--worker-class", "eventlet", "--workers", "1", "--bind", "0.0.0.0:3000", "--timeout", "300", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
