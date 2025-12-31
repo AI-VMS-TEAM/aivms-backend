@@ -1,0 +1,131 @@
+[Network]
+# NVR IP address
+nvr_ip = 192.168.1.250
+
+[Recording]
+# Enable continuous recording
+enabled = true
+
+# Storage path for recordings (use dedicated drive for better performance)
+storage_path = D:\recordings
+
+# Segment duration in milliseconds (2000-4000ms recommended)
+segment_duration_ms = 3000
+
+# Retention period in days (7-90 days recommended)
+retention_days = 7
+
+# Cleanup interval in hours
+cleanup_interval_hours = 1
+
+# Maximum retries for failed segments
+max_retries = 3
+
+# Verify file integrity on startup
+verify_integrity = true
+
+[Detection]
+# Enable object detection
+enabled = true
+
+# Model to use (rtdetr-l, rtdetr-x, yolo11m, yolo11l)
+# RT-DETR: Better accuracy, no NMS required, transformer-based
+# YOLO11: Faster, good for real-time applications
+model = rtdetr-l
+
+# Detection classes to detect (comma-separated)
+# Options: person, vehicle, truck, animal, car, bus, motorcycle, bicycle, etc.
+classes = person,vehicle,truck,animal
+
+# Frames per second to run detection (e.g., 30 FPS for smooth tracking)
+detection_fps = 30.0
+
+# Minimum confidence threshold for detections (0.0 - 1.0)
+# Lower values detect more objects but may include false positives
+confidence_threshold = 0.4
+
+# Use GPU for inference (true/false)
+# Will automatically fall back to CPU if GPU not available
+use_gpu = true
+
+# Maximum number of objects to track simultaneously
+max_objects = 100
+
+# Tracking algorithm (bytetrack, deepsort, botsort)
+tracker = bytetrack
+
+[Cameras]
+# Number of cameras
+camera_count = 4
+
+[Camera_1]
+name = Front Camera
+# RTSP URL format: rtsp://username:password@ip:port/stream
+rtsp_url = rtsp://admin:password@192.168.1.101:554/stream
+enabled = true
+
+[Camera_2]
+name = Back Camera
+rtsp_url = rtsp://admin:password@192.168.1.102:554/stream
+enabled = true
+
+[Camera_3]
+name = Left Camera
+rtsp_url = rtsp://admin:password@192.168.1.103:554/stream
+enabled = true
+
+[Camera_4]
+name = Right Camera
+rtsp_url = rtsp://admin:password@192.168.1.104:554/stream
+enabled = true
+
+[Database]
+# Database path (SQLite)
+db_path = recordings.db
+
+# Enable WAL mode for better concurrency
+wal_mode = true
+
+[API]
+# Flask server host
+host = 0.0.0.0
+
+# Flask server port
+port = 5000
+
+# Enable debug mode (disable in production)
+debug = false
+
+# CORS allowed origins (comma-separated)
+cors_origins = http://localhost:3000,http://localhost:5000
+
+[Logging]
+# Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+log_level = INFO
+
+# Log file path
+log_file = flask.log
+
+# Maximum log file size in MB
+max_log_size_mb = 10
+
+# Number of backup log files to keep
+backup_count = 5
+
+[Zones]
+# Enable zone-based analytics
+enabled = true
+
+# Zone configuration file
+zones_file = zones.json
+
+[Performance]
+# Number of worker threads for detection
+worker_threads = 4
+
+# Enable frame skipping during high load
+enable_frame_skip = true
+
+# Maximum queue size for frames
+max_queue_size = 100
+

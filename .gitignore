@@ -1,0 +1,137 @@
+# Database files
+*.db
+*.db-wal
+*.db-shm
+
+# Log files
+*.log
+flask.log
+app.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables and sensitive config
+.env
+.env.local
+config.ini
+
+# Recordings and media
+recordings/
+*.mp4
+*.m3u8
+*.ts
+
+# HLS streaming files (temporary)
+public/hls/
+services/public/hls/
+
+# Temporary files
+*.tmp
+*.temp
+
+# YOLO Models (large binary files - download on demand)
+models/*.pt
+*.pt
+yolo*.pt
+rtdetr*.pt
+
+# Executables (download separately)
+*.exe
+mediamtx.exe
+
+# Documentation (keep only README.md)
+docs/
+*_SUMMARY.md
+*_GUIDE.md
+*_PLAN.md
+*_RESULTS.md
+*_COMPARISON.md
+*_BREAKDOWN.md
+*_IMPLEMENTATION.md
+*_VERIFICATION.md
+*_COMPLETE.md
+*_CELEBRATION.md
+*_RESEARCH.md
+*_OPTIMIZATION.md
+*_REPORT.md
+*_FIX.md
+*_UPGRADE.md
+*_EXPLANATION.md
+*_REFERENCE.md
+*_LAYOUT.txt
+*_INDEX.md
+*_CHECKLIST.md
+*_RECOMMENDATION.md
+START_HERE.md
+QUICK_START_GUIDE.md
+RESTART_REQUIRED.md
+NEXT_STEPS*.md
+IMMEDIATE_NEXT_STEPS.md
+STRATEGIC_RECOMMENDATION.md
+EXECUTIVE_SUMMARY.md
+FINAL_SUMMARY.md
+CURRENT_STATUS_SUMMARY.md
+DETAILED_IMPLEMENTATION_BREAKDOWN.md
+FILE_CHANGES_SUMMARY.md
+WHAT_I_DID_DETAILED.md
+CODE_FLOW_DETAILED.md
+WEBSOCKET_IMPLEMENTATION.md
+ZONE_*.md
+ZONE_*.txt
+VISION_*.md
+ACCURACY_*.md
+BYTETRACK_*.md
+HLS_*.md
+GPU_*.md
+
+# Test datasets and evaluation
+datasets/
+evaluation/
+runs/
+
+# Middleware (if not needed)
+middleware/
+
+# Utility scripts (temporary)
+monitor_*.py
+check_and_force_cleanup.py
+
+# Multiple requirements files (keep only requirements.txt)
+requirements_py*.txt
+

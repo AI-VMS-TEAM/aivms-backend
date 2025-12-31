@@ -1,0 +1,261 @@
+# Zone Configuration for Vision 31: Structured Metadata & Context System
+#
+# Defines zones for each camera with polygon coordinates.
+# Zones are used to track object entry/exit events and calculate per-zone dwell time.
+#
+# Coordinate System:
+# - Origin (0, 0) is top-left corner of the frame
+# - X increases to the right
+# - Y increases downward
+# - Coordinates are in pixels
+#
+# Polygon Format:
+# - List of [x, y] coordinates defining the zone boundary
+# - Coordinates should form a closed polygon (first and last points connect automatically)
+# - Use at least 3 points (triangle) up to any number of points
+#
+# Zone Types for Dealership:
+# - entrance: Main entrance area (customer arrivals)
+# - showroom: Showroom floor (customer browsing)
+# - service_area: Service department (service customers)
+# - parking_lot: Parking lot (vehicle parking)
+# - office: Office area (staff only)
+# - waiting_area: Waiting area (customers waiting)
+
+# Camera Location Metadata
+camera_locations:
+  bosch_front_cam:
+    location: "Main Entrance"
+    type: "entrance"
+    description: "Monitors customer arrivals and entrance area"
+    active: true
+    metrics:
+      - customer_count
+      - dwell_time
+      - zone_transitions
+      - peak_hours
+
+  wisenet_front:
+    location: "Showroom Floor"
+    type: "showroom"
+    description: "Monitors customer engagement with vehicles"
+    active: false  # Camera not configured yet
+    metrics:
+      - customer_count
+      - vehicle_engagement_time
+      - zone_transitions
+      - popular_vehicles
+
+  dahua_front_cam:
+    location: "Parking Lot"
+    type: "parking"
+    description: "Monitors vehicle parking and test drives"
+    active: false  # Camera not configured yet
+    metrics:
+      - vehicle_count
+      - parking_duration
+      - parking_occupancy
+      - test_drive_tracking
+
+  axis_front_cam:
+    location: "Security Perimeter"
+    type: "security"
+    description: "Monitors perimeter and after-hours activity"
+    active: false  # Camera not configured yet
+    metrics:
+      - after_hours_activity
+      - perimeter_breaches
+      - unauthorized_access
+
+cameras:
+  # ========================================
+  # BOSCH FRONT CAM - ENTRANCE (ACTIVE)
+  # ========================================
+  bosch_front_cam:
+    resolution: [1920, 1080]
+    location: "Main Entrance"
+    type: "entrance"
+    active: true
+    zones:
+      - id: entrance_approach
+        name: "Entrance Approach"
+        description: "Area before entrance door - tracks customers approaching"
+        polygon: [[0, 0], [640, 0], [640, 1080], [0, 1080]]
+        color: "#FF0000"  # Red
+        type: entrance
+        metrics:
+          - customer_count
+          - approach_time
+
+      - id: entrance_door
+        name: "Entrance Door"
+        description: "Door threshold - tracks customers entering/exiting"
+        polygon: [[640, 0], [1280, 0], [1280, 1080], [640, 1080]]
+        color: "#FF6600"  # Orange
+        type: entrance
+        metrics:
+          - customer_count
+          - door_dwell_time
+          - entry_exit_ratio
+
+      - id: entrance_lobby
+        name: "Entrance Lobby"
+        description: "Inside entrance area - tracks customers after entry"
+        polygon: [[1280, 0], [1920, 0], [1920, 1080], [1280, 1080]]
+        color: "#FFAA00"  # Yellow-Orange
+        type: entrance
+        metrics:
+          - customer_count
+          - lobby_dwell_time
+          - greeter_engagement
+
+  # ========================================
+  # WISENET FRONT - SHOWROOM (INACTIVE)
+  # ========================================
+  wisenet_front:
+    resolution: [1920, 1080]
+    location: "Showroom Floor"
+    type: "showroom"
+    active: false
+    zones:
+      - id: showroom_vehicle_1
+        name: "Featured Vehicle Spot 1"
+        description: "Prime display location for featured vehicle"
+        polygon: [[200, 200], [800, 200], [800, 700], [200, 700]]
+        color: "#00FF00"  # Green
+        type: showroom
+        metrics:
+          - engagement_time
+          - customer_count
+
+      - id: showroom_vehicle_2
+        name: "Featured Vehicle Spot 2"
+        description: "Secondary display location"
+        polygon: [[900, 200], [1500, 200], [1500, 700], [900, 700]]
+        color: "#00AA00"  # Dark Green
+        type: showroom
+        metrics:
+          - engagement_time
+          - customer_count
+
+      - id: showroom_aisle
+        name: "Main Aisle"
+        description: "Customer walking path between vehicles"
+        polygon: [[800, 200], [900, 200], [900, 900], [800, 900]]
+        color: "#00FFAA"  # Cyan-Green
+        type: showroom
+        metrics:
+          - foot_traffic
+          - flow_direction
+
+  # ========================================
+  # DAHUA FRONT CAM - PARKING (INACTIVE)
+  # ========================================
+  dahua_front_cam:
+    resolution: [1920, 1080]
+    location: "Parking Lot"
+    type: "parking"
+    active: false
+    zones:
+      - id: parking_customer
+        name: "Customer Parking"
+        description: "Main customer parking area"
+        polygon: [[100, 200], [900, 200], [900, 800], [100, 800]]
+        color: "#0000FF"  # Blue
+        type: parking_lot
+        metrics:
+          - vehicle_count
+          - parking_duration
+          - occupancy_rate
+
+      - id: parking_testdrive
+        name: "Test Drive Exit"
+        description: "Test drive departure and return point"
+        polygon: [[1000, 200], [1800, 200], [1800, 800], [1000, 800]]
+        color: "#0066FF"  # Light Blue
+        type: parking_lot
+        metrics:
+          - test_drive_count
+          - test_drive_duration
+
+  # ========================================
+  # AXIS FRONT CAM - SECURITY (INACTIVE)
+  # ========================================
+  axis_front_cam:
+    resolution: [1920, 1080]
+    location: "Security Perimeter"
+    type: "security"
+    active: false
+    zones:
+      - id: security_perimeter
+        name: "Perimeter Zone"
+        description: "Outer perimeter security monitoring"
+        polygon: [[100, 100], [1800, 100], [1800, 1000], [100, 1000]]
+        color: "#FF00FF"  # Magenta
+        type: security
+        metrics:
+          - after_hours_activity
+          - perimeter_breaches
+
+      - id: security_restricted
+        name: "Restricted Area"
+        description: "Restricted access area (staff only)"
+        polygon: [[1400, 200], [1800, 200], [1800, 600], [1400, 600]]
+        color: "#AA00AA"  # Dark Magenta
+        type: security
+        metrics:
+          - unauthorized_access
+          - staff_activity
+
+# Zone Analytics Configuration
+analytics:
+  # Minimum dwell time to count as a visit (seconds)
+  min_dwell_time: 5.0
+  
+  # Maximum dwell time before considering track as "stuck" (seconds)
+  max_dwell_time: 3600.0
+  
+  # Update interval for real-time analytics (seconds)
+  update_interval: 10.0
+  
+  # Heatmap resolution (pixels per cell)
+  heatmap_resolution: 50
+  
+  # Zone transition cooldown (seconds)
+  # Prevents rapid zone entry/exit events
+  transition_cooldown: 2.0
+
+# Zone Event Configuration
+events:
+  # Enable zone entry events
+  enable_entry_events: true
+  
+  # Enable zone exit events
+  enable_exit_events: true
+  
+  # Enable zone dwell time updates
+  enable_dwell_updates: true
+  
+  # Dwell time update interval (seconds)
+  dwell_update_interval: 5.0
+  
+  # Broadcast zone events via WebSocket
+  broadcast_events: true
+
+# Visualization Configuration
+visualization:
+  # Draw zones on video overlay
+  draw_zones: true
+  
+  # Zone border thickness (pixels)
+  zone_border_thickness: 2
+  
+  # Zone fill opacity (0.0 - 1.0)
+  zone_fill_opacity: 0.2
+  
+  # Draw zone labels
+  draw_zone_labels: true
+  
+  # Zone label font size
+  zone_label_font_size: 16
+

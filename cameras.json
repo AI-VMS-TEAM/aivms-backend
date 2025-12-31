@@ -1,0 +1,54 @@
+[
+    {
+        "name": "Bosch Front Cam",
+        "ip": "192.168.1.110",
+        "port": "554",
+        "username": "service",
+        "password": "Test#123",
+        "path": "rtsp_tunnel",
+        "location": "Main Entrance",
+        "type": "entrance",
+        "description": "Monitors customer arrivals and entrance area",
+        "active": true,
+        "metrics": ["customer_count", "dwell_time", "zone_transitions", "peak_hours"]
+    },
+    {
+        "name": "Wisenet Front",
+        "ip": "192.168.1.100",
+        "port": "",
+        "username": "admin",
+        "password": "test123@",
+        "path": "profile2/media.smp",
+        "location": "Showroom Floor",
+        "type": "showroom",
+        "description": "Monitors customer engagement with vehicles",
+        "active": false,
+        "metrics": ["customer_count", "vehicle_engagement_time", "zone_transitions", "popular_vehicles"]
+    },
+    {
+        "name": "Dahua Front Cam",
+        "ip": "192.168.1.109",
+        "port": "",
+        "username": "admin",
+        "password": "Test123@",
+        "path": "cam/realmonitor?channel=1&subtype=0",
+        "location": "Parking Lot",
+        "type": "parking",
+        "description": "Monitors vehicle parking and test drives",
+        "active": false,
+        "metrics": ["vehicle_count", "parking_duration", "parking_occupancy", "test_drive_tracking"]
+    },
+    {
+        "name": "Axis Front Cam",
+        "ip": "192.168.1.112",
+        "port": "",
+        "username": "root",
+        "password": "Test123@",
+        "path": "axis-media/media.amp",
+        "location": "Security Perimeter",
+        "type": "security",
+        "description": "Monitors perimeter and after-hours activity",
+        "active": false,
+        "metrics": ["after_hours_activity", "perimeter_breaches", "unauthorized_access"]
+    }
+]

@@ -1,0 +1,29 @@
+# Enable the web dashboard and API on port 5555
+api: yes
+apiAddress: 0.0.0.0:5555
+
+# Enable HLS (for the dashboard) - HLS is served through the API port
+hls: yes
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsMuxerCloseAfter: 60s
+
+# Global path defaults for recording
+pathDefaults:
+  record: yes
+  recordPath: D:\recordings\%path\%Y-%m-%d\%H-%M-%S-%ms_%s
+
+# This is where our app will automatically add all camera paths.
+# It can be empty, but the 'paths:' key must exist.
+paths:
+  wisenet_front:
+    source: rtsp://admin:test123%40@192.168.1.100/profile2/media.smp
+  dahua_front_cam:
+    source: rtsp://admin:Test123%40@192.168.1.109/cam/realmonitor?channel=1&subtype=0
+  bosch_front_cam:
+    source: rtsp://service:Test%23123@192.168.1.110:554/rtsp_tunnel
+  axis_front_cam:
+    source: rtsp://root:Test123%40@192.168.1.112/axis-media/media.amp

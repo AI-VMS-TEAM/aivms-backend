@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVMS - Live Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aivms-dark': '#0d1117',
+                        'aivms-darker': '#010409',
+                        'aivms-border': '#30363d',
+                        'aivms-accent': '#58a6ff',
+                        'aivms-success': '#238636',
+                        'aivms-danger': '#da3633',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Authentication Check -->
+    <script src="/js/auth-check.js"></script>
+
+    <style>
+        /* Custom styles for video grid */
+        #gridContainer {
+            display: grid;
+            gap: 0.75rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .video-grid-2x2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+        }
+        .video-grid-3x3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(3, minmax(0, 1fr));
+        }
+        .video-grid-4x4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: repeat(4, minmax(0, 1fr));
+        }
+
+        .videoCell {
+            position: relative;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            min-width: 0;
+        }
+        .videoCell video { width: 100%; height: 100%; object-fit: cover; }
+        .videoCell canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; object-fit: contain; }
+
+        /* Fullscreen mode */
+        .fullscreen-mode { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: #000; }
+        .fullscreen-mode .videoCell { aspect-ratio: auto; width: 100%; height: 100%; }
+
+        /* Camera overlay */
+        .camera-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 20; pointer-events: none; }
+        .camera-name { position: absolute; bottom: 12px; left: 12px; color: white; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 6px; font-size: 0.875rem; font-weight: 500; z-index: 50; backdrop-filter: blur(4px); pointer-events: auto; }
+        .camera-stats { position: absolute; top: 12px; right: 12px; color: white; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; z-index: 50; backdrop-filter: blur(4px); pointer-events: auto; }
+        .camera-controls { position: absolute; top: 12px; left: 12px; z-index: 50; opacity: 0; transition: opacity 0.2s; pointer-events: auto; }
+        .videoCell:hover .camera-controls { opacity: 1; }
+
+        /* Loading spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+
+        /* Smooth transitions */
+        .transition-all { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-aivms-darker text-gray-100 overflow-hidden">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-aivms-dark border-b border-aivms-border px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-white flex items-center">
+                <svg class="w-6 h-6 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                AIVMS Live Dashboard
+            </h1>
+            <span class="text-sm text-gray-400" id="cameraCount">0 cameras</span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <!-- Grid Layout Selector -->
+            <div class="flex items-center space-x-2 bg-aivms-darker rounded-lg p-1">
+                <button onclick="setGridLayout('2x2')" class="grid-btn px-3 py-1.5 rounded text-sm hover:bg-aivms-border transition bg-aivms-border" title="2x2 Grid">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+                </button>
+                <button onclick="setGridLayout('3x3')" class="grid-btn px-3 py-1.5 rounded text-sm hover:bg-aivms-border transition" title="3x3 Grid">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="17" y="3" width="5" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/><rect x="17" y="10" width="5" height="5" rx="1"/><rect x="3" y="17" width="5" height="5" rx="1"/><rect x="10" y="17" width="5" height="5" rx="1"/><rect x="17" y="17" width="5" height="5" rx="1"/></svg>
+                </button>
+                <button onclick="setGridLayout('4x4')" class="grid-btn px-3 py-1.5 rounded text-sm hover:bg-aivms-border transition" title="4x4 Grid">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="2" width="4" height="4" rx="0.5"/><rect x="8" y="2" width="4" height="4" rx="0.5"/><rect x="14" y="2" width="4" height="4" rx="0.5"/><rect x="20" y="2" width="4" height="4" rx="0.5"/><rect x="2" y="8" width="4" height="4" rx="0.5"/><rect x="8" y="8" width="4" height="4" rx="0.5"/><rect x="14" y="8" width="4" height="4" rx="0.5"/><rect x="20" y="8" width="4" height="4" rx="0.5"/><rect x="2" y="14" width="4" height="4" rx="0.5"/><rect x="8" y="14" width="4" height="4" rx="0.5"/><rect x="14" y="14" width="4" height="4" rx="0.5"/><rect x="20" y="14" width="4" height="4" rx="0.5"/><rect x="2" y="20" width="4" height="4" rx="0.5"/><rect x="8" y="20" width="4" height="4" rx="0.5"/><rect x="14" y="20" width="4" height="4" rx="0.5"/><rect x="20" y="20" width="4" height="4" rx="0.5"/></svg>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <a href="/index.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Cameras
+            </a>
+            <a href="/playback.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Playback
+            </a>
+            <a href="/health-dashboard.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Health
+            </a>
+            <a href="/settings.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Settings
+            </a>
+
+            <!-- User Info & Logout -->
+            <div class="flex items-center space-x-2 border-l border-aivms-border pl-3 ml-3">
+                <div class="flex items-center space-x-2 text-sm">
+                    <svg class="w-5 h-5 text-aivms-accent" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span id="currentUsername" class="text-gray-300">Loading...</span>
+                    <span id="currentUserRole" class="text-xs px-2 py-0.5 bg-aivms-accent/20 text-aivms-accent rounded-full"></span>
+                </div>
+                <button onclick="logout()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="h-[calc(100vh-60px)] p-4">
+        <!-- Video Grid Container -->
+        <div id="gridContainer" class="video-grid-2x2">
+            <!-- Camera cells will be dynamically added here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex items-center justify-center h-full">
+            <div class="text-center">
+                <svg class="w-24 h-24 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-400 mb-2">No Cameras Configured</h3>
+                <p class="text-gray-500 mb-4">Add cameras to start monitoring</p>
+                <a href="/index.html" class="inline-flex items-center px-4 py-2 bg-aivms-accent hover:bg-blue-600 rounded-lg text-sm font-medium transition">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Camera
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // ========================================
+        // AIVMS Dashboard - Modern UI
+        // ========================================
+
+        console.log('🚀 AIVMS Dashboard loaded');
+
+        // Global state
+        let currentCameraCount = 0;
+        let currentFullscreenCell = null;
+        let currentGridLayout = '2x2';
+        let cameras = [];
+
+        // Utility Functions
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            const bgColors = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600',
+                'warning': 'bg-yellow-600',
+                'info': 'bg-blue-600'
+            };
+
+            toast.className = `${bgColors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        function setGridLayout(layout) {
+            currentGridLayout = layout;
+            const grid = document.getElementById('gridContainer');
+
+            // Remove all grid classes
+            grid.classList.remove('video-grid-2x2', 'video-grid-3x3', 'video-grid-4x4');
+
+            // Add new grid class
+            grid.classList.add(`video-grid-${layout}`);
+
+            // Update button states
+            document.querySelectorAll('.grid-btn').forEach(btn => {
+                btn.classList.remove('bg-aivms-border');
+            });
+            event.target.closest('button').classList.add('bg-aivms-border');
+
+            console.log(`📐 Grid layout changed to ${layout}`);
+        }
+
+        function updateCameraCount() {
+            const countEl = document.getElementById('cameraCount');
+            const count = cameras.length;
+            countEl.textContent = `${count} camera${count !== 1 ? 's' : ''}`;
+        }
+
+        function buildCameraCell(cam) {
+            const cell = document.createElement('div');
+            cell.className = 'videoCell border border-aivms-border rounded-lg overflow-hidden relative group';
+            cell.id = `cell-${cam.id}`;
+
+            // Video element
+            const video = document.createElement('video');
+            video.id = `videoPlayer-${cam.id}`;
+            video.autoplay = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.className = 'w-full h-full object-cover';
+
+            // Canvas for overlays
+            const canvas = document.createElement('canvas');
+            canvas.id = `canvas-${cam.id}`;
+
+            // Camera overlay container
+            const overlay = document.createElement('div');
+            overlay.className = 'camera-overlay';
+
+            // Camera name badge
+            const nameOverlay = document.createElement('div');
+            nameOverlay.className = 'camera-name';
+            nameOverlay.id = `name-${cam.id}`;
+            nameOverlay.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>${cam.name}</span>
+                </div>
+            `;
+            console.log(`[${cam.name}] Created name overlay with ID: name-${cam.id}`);
+
+            // Stats overlay
+            const statsOverlay = document.createElement('div');
+            statsOverlay.className = 'camera-stats';
+            statsOverlay.id = `stats-${cam.id}`;
+            statsOverlay.innerHTML = `
+                <div class="text-xs space-y-0.5">
+                    <div>🚗 <span id="car-count-${cam.id}">0</span></div>
+                    <div>👤 <span id="person-count-${cam.id}">0</span></div>
+                </div>
+            `;
+
+            // Control buttons (visible on hover)
+            const controls = document.createElement('div');
+            controls.className = 'camera-controls flex space-x-2';
+            controls.innerHTML = `
+                <button onclick="toggleFullscreen('${cam.id}')" class="bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 rounded-lg transition" title="Fullscreen">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                </button>
+                <button onclick="window.location.href='/playback.html?camera=${cam.name}'" class="bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 rounded-lg transition" title="Playback">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+            `;
+
+            // Loading indicator
+            const loading = document.createElement('div');
+            loading.className = 'absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-40';
+            loading.id = `loading-${cam.id}`;
+            loading.innerHTML = `
+                <div class="text-center">
+                    <svg class="w-12 h-12 text-aivms-accent spinner mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <p class="text-sm text-gray-300">Connecting...</p>
+                </div>
+            `;
+
+            // Assemble cell
+            overlay.appendChild(nameOverlay);
+            overlay.appendChild(statsOverlay);
+            overlay.appendChild(controls);
+
+            cell.appendChild(video);
+            cell.appendChild(canvas);
+            cell.appendChild(overlay);
+            cell.appendChild(loading);
+
+            // Add double-click event listener for fullscreen toggle
+            cell.addEventListener('dblclick', () => {
+                toggleFullscreen(cam.id);
+            });
+
+            document.getElementById('gridContainer').appendChild(cell);
+
+            // Initialize HLS stream
+            let hls = null;
+            const streamName = cam.name.toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+            const streamUrl = `http://${window.location.hostname}:8888/${streamName}/index.m3u8`;
+
+            console.log(`[${cam.name}] Stream URL: ${streamUrl}`);
+
+            function loadStream(url) {
+                if (hls) hls.destroy();
+
+                console.log(`[${cam.name}] Attempting to load stream...`);
+
+                if (Hls.isSupported()) {
+                    hls = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        backBufferLength: 90,
+                        maxBufferLength: 30,
+                        maxMaxBufferLength: 60,
+                        liveSyncDurationCount: 3,
+                        liveMaxLatencyDurationCount: 10,
+                        liveDurationInfinity: true,
+                        highBufferWatchdogPeriod: 2
+                    });
+
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        console.error(`[${cam.name}] HLS Error:`, data.type, data.details, data.fatal);
+                        if (data.fatal) {
+                            switch(data.type) {
+                                case Hls.ErrorTypes.NETWORK_ERROR:
+                                    console.log(`[${cam.name}] Network error, recovering...`);
+                                    hls.startLoad();
+                                    showToast(`${cam.name}: Network error, reconnecting...`, 'warning');
+                                    break;
+                                case Hls.ErrorTypes.MEDIA_ERROR:
+                                    console.log(`[${cam.name}] Media error, recovering...`);
+                                    hls.recoverMediaError();
+                                    break;
+                                default:
+                                    console.error(`[${cam.name}] Fatal error, reloading...`);
+                                    showToast(`${cam.name}: Connection lost, retrying...`, 'error');
+                                    setTimeout(() => loadStream(url), 2000);
+                                    break;
+                            }
+                        }
+                    });
+
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        console.log(`✅ [${cam.name}] Stream loaded successfully`);
+                        const loadingEl = document.getElementById(`loading-${cam.id}`);
+                        if (loadingEl) {
+                            loadingEl.style.display = 'none';
+                        }
+                        video.play().catch(e => console.warn(`[${cam.name}] Autoplay failed:`, e));
+                    });
+
+                    hls.on(Hls.Events.MANIFEST_LOADING, () => {
+                        console.log(`[${cam.name}] Loading manifest...`);
+                    });
+
+                    hls.on(Hls.Events.LEVEL_LOADED, () => {
+                        console.log(`[${cam.name}] Level loaded`);
+                    });
+
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    console.log(`[${cam.name}] Using native HLS support`);
+                    video.src = url;
+                    video.addEventListener('loadeddata', () => {
+                        console.log(`✅ [${cam.name}] Native HLS loaded`);
+                        const loadingEl = document.getElementById(`loading-${cam.id}`);
+                        if (loadingEl) {
+                            loadingEl.style.display = 'none';
+                        }
+                    });
+                    video.play().catch(e => console.warn(`[${cam.name}] Autoplay failed:`, e));
+                } else {
+                    console.error(`[${cam.name}] HLS not supported`);
+                    showToast(`${cam.name}: Browser does not support HLS`, 'error');
+                }
+            }
+
+            loadStream(streamUrl);
+
+            // Setup canvas overlay after video is loaded
+            video.addEventListener('loadedmetadata', () => {
+                console.log(`Video metadata loaded for ${cam.name}: ${video.videoWidth}x${video.videoHeight}`);
+                setupCanvasOverlay(cam, canvas, video);
+            });
+        }
+
+        // Fullscreen toggle function
+        function toggleFullscreen(cameraId) {
+            const cell = document.getElementById(`cell-${cameraId}`);
+
+            if (currentFullscreenCell === cell) {
+                // Exit fullscreen
+                cell.classList.remove('fullscreen-mode');
+                currentFullscreenCell = null;
+                console.log(`📺 Exited fullscreen`);
+            } else {
+                // Exit any existing fullscreen first
+                if (currentFullscreenCell) {
+                    currentFullscreenCell.classList.remove('fullscreen-mode');
+                }
+                // Enter fullscreen
+                cell.classList.add('fullscreen-mode');
+                currentFullscreenCell = cell;
+                console.log(`📺 Entered fullscreen for camera ${cameraId}`);
+            }
+        }
+
+        function setupCanvasOverlay(cam, canvas, video) {
+            const ctx = canvas.getContext('2d');
+            let zones = [];
+            let tracks = [];
+            let animationId = null;
+
+            // Resize canvas to match video
+            function resizeCanvas() {
+                if (video.videoWidth > 0 && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                }
+            }
+
+            // Draw zones and tracks
+            function draw() {
+                resizeCanvas();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Count detections by class
+                let carCount = 0;
+                let personCount = 0;
+                tracks.forEach(track => {
+                    if (track.class === 'car') carCount++;
+                    if (track.class === 'person') personCount++;
+                });
+
+                // Update stats overlay in DOM
+                const carCountEl = document.getElementById(`car-count-${cam.id}`);
+                const personCountEl = document.getElementById(`person-count-${cam.id}`);
+                if (carCountEl) carCountEl.textContent = carCount;
+                if (personCountEl) personCountEl.textContent = personCount;
+
+                // Draw tracks
+                tracks.forEach((track) => {
+                    const bbox = track.bbox;
+                    if (!bbox || bbox.length < 4) return;
+
+                    const className = track.class;
+                    if (className !== 'car' && className !== 'person') return;
+
+                    const isPerson = className === 'person';
+                    const [x1, y1, x2, y2] = bbox;
+
+                    // Draw based on class type
+                    if (isPerson && track.pose && track.pose.keypoints) {
+                        // Draw pose skeleton for persons
+                        drawPoseSkeleton(ctx, track.pose.keypoints);
+
+                        // Draw label
+                        const label = `ID:${track.track_id} PERSON ${(track.confidence * 100).toFixed(0)}%`;
+                        ctx.font = 'bold 16px Arial';
+                        const textWidth = ctx.measureText(label).width;
+
+                        ctx.fillStyle = 'rgba(255, 0, 255, 0.8)';
+                        ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillText(label, x1 + 5, y1 - 7);
+                    } else if (isPerson) {
+                        // Person without pose - draw bounding box
+                        ctx.strokeStyle = '#FF00FF';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                        const label = `ID:${track.track_id} PERSON ${(track.confidence * 100).toFixed(0)}%`;
+                        ctx.font = 'bold 16px Arial';
+                        const textWidth = ctx.measureText(label).width;
+
+                        ctx.fillStyle = 'rgba(255, 0, 255, 0.8)';
+                        ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillText(label, x1 + 5, y1 - 7);
+                    } else {
+                        // Draw bounding box for vehicles
+                        const color = getClassColor(className);
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                        // Draw label
+                        const label = `ID:${track.track_id} ${track.class.toUpperCase()} ${(track.confidence * 100).toFixed(0)}%`;
+                        ctx.font = 'bold 16px Arial';
+                        const textWidth = ctx.measureText(label).width;
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+
+                        ctx.fillStyle = color;
+                        ctx.fillText(label, x1 + 5, y1 - 7);
+                    }
+                });
+
+                animationId = requestAnimationFrame(draw);
+            }
+
+            // Create camera slug (same as backend)
+            const cameraSlug = cam.name.toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+
+            // Fetch zones for this camera
+            fetch(`/api/zones/list?camera_id=${cameraSlug}`)
+                .then(r => r.json())
+                .then(data => {
+                    zones = data.zones || [];
+                    console.log(`Loaded ${zones.length} zones for ${cam.name}`);
+                    draw();
+                })
+                .catch(e => console.error(`Failed to load zones for ${cam.name}:`, e));
+
+            // Connect to WebSocket for real-time tracks
+            const socket = io(`http://${window.location.hostname}:3000/detections`);
+            socket.on('connect', () => {
+                console.log(`✅ WebSocket connected for ${cam.name}`);
+                socket.emit('subscribe', { camera_id: cameraSlug });
+            });
+
+            socket.on('detections', (data) => {
+                if (data.camera_id === cameraSlug) {
+                    // Use tracks if available, otherwise use detections
+                    if (data.tracks && data.tracks.length > 0) {
+                        tracks = data.tracks;
+                    } else if (data.detections && data.detections.length > 0) {
+                        tracks = data.detections;
+                    }
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log(`❌ WebSocket disconnected for ${cam.name}`);
+                showToast(`${cam.name}: Connection lost`, 'warning');
+            });
+        }
+
+        // Helper Functions
+        function getClassColor(className) {
+            const colors = {
+                'person': '#FF00FF',  // Magenta
+                'car': '#00FF00',     // Green
+                'truck': '#FFFF00',   // Yellow
+                'bus': '#FF6600',     // Orange
+                'motorcycle': '#00FFFF', // Cyan
+                'bicycle': '#FF00AA'  // Pink
+            };
+            return colors[className] || '#00FF00';
+        }
+
+        function drawPoseSkeleton(ctx, keypoints) {
+            const skeleton = [
+                [0, 1], [0, 2],  // nose to eyes
+                [1, 3], [2, 4],  // eyes to ears
+                [0, 5], [0, 6],  // nose to shoulders
+                [5, 6],  // shoulders
+                [5, 7], [7, 9],  // left arm
+                [6, 8], [8, 10],  // right arm
+                [5, 11], [6, 12],  // shoulders to hips
+                [11, 12],  // hips
+                [11, 13], [13, 15],  // left leg
+                [12, 14], [14, 16],  // right leg
+            ];
+
+            const minConfidence = 0.3;
+
+            // Draw skeleton lines
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 4;
+            skeleton.forEach(([startIdx, endIdx]) => {
+                const start = keypoints[startIdx];
+                const end = keypoints[endIdx];
+
+                if (start && end && start[2] > minConfidence && end[2] > minConfidence) {
+                    ctx.beginPath();
+                    ctx.moveTo(start[0], start[1]);
+                    ctx.lineTo(end[0], end[1]);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw keypoints
+            ctx.fillStyle = '#FF00FF';
+            keypoints.forEach(kpt => {
+                if (kpt && kpt[2] > minConfidence) {
+                    ctx.beginPath();
+                    ctx.arc(kpt[0], kpt[1], 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // Main Dashboard Update Function
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/api/cameras');
+                cameras = await response.json();
+
+                const grid = document.getElementById('gridContainer');
+                const emptyState = document.getElementById('emptyState');
+
+                if (cameras.length === 0) {
+                    grid.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                } else {
+                    grid.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+
+                    if (cameras.length !== currentCameraCount) {
+                        grid.innerHTML = '';
+                        cameras.forEach(buildCameraCell);
+                        currentCameraCount = cameras.length;
+                    }
+                }
+
+                updateCameraCount();
+            } catch (e) {
+                console.error("Failed to update dashboard:", e);
+                showToast('Failed to load cameras', 'error');
+            }
+        }
+
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 AIVMS Dashboard initialized');
+
+            updateDashboard();
+            setInterval(updateDashboard, 5000);
+
+            // Handle tab visibility changes
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    console.log('Tab became visible, ensuring videos are playing');
+                    document.querySelectorAll('video').forEach(video => {
+                        if (video.paused) {
+                            video.play().catch(e => console.warn('Failed to resume video:', e));
+                        }
+                    });
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // ESC to exit fullscreen
+                if (e.key === 'Escape' && currentFullscreenCell) {
+                    currentFullscreenCell.classList.remove('fullscreen-mode');
+                    currentFullscreenCell = null;
+                }
+            });
+
+            // Update user info when auth is ready
+            window.addEventListener('auth-ready', (e) => {
+                const user = e.detail;
+                document.getElementById('currentUsername').textContent = user.username;
+                document.getElementById('currentUserRole').textContent = user.role.toUpperCase();
+            });
+        });
+
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    console.log('✅ Logged out successfully');
+                    window.location.href = '/login.html';
+                } else {
+                    console.error('❌ Logout failed');
+                    alert('Logout failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('❌ Logout error:', error);
+                alert('Network error during logout.');
+            }
+        }
+    </script>
+</body>
+</html>

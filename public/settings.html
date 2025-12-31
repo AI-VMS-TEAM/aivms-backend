@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVMS - Settings</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aivms-dark': '#0d1117',
+                        'aivms-darker': '#010409',
+                        'aivms-border': '#30363d',
+                        'aivms-accent': '#58a6ff',
+                        'aivms-success': '#238636',
+                        'aivms-danger': '#da3633',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Authentication Check -->
+    <script src="/js/auth-check.js"></script>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-aivms-darker text-gray-100">
+    
+    <!-- Top Navigation Bar -->
+    <nav class="bg-aivms-dark border-b border-aivms-border px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-white flex items-center">
+                <svg class="w-6 h-6 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                AIVMS Settings
+            </h1>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <a href="/index.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition">Cameras</a>
+            <a href="/dashboard.html" class="px-4 py-2 bg-aivms-accent hover:bg-blue-600 rounded-lg text-sm font-medium transition">Live Dashboard</a>
+            <a href="/playback.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition">Playback</a>
+            <a href="/health-dashboard.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition">Health</a>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-8 max-w-6xl">
+        
+        <!-- Detection Settings -->
+        <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Detection Settings
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Confidence Threshold</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="confidenceSlider" min="0.1" max="0.9" step="0.05" value="0.5" 
+                               class="flex-1 h-2 bg-aivms-border rounded-lg appearance-none cursor-pointer">
+                        <span id="confidenceValue" class="text-sm font-mono bg-aivms-darker px-3 py-1 rounded">0.50</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Higher values = fewer false positives, lower values = more detections</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Detection FPS</label>
+                    <select id="detectionFps" class="w-full px-4 py-2 bg-aivms-darker border border-aivms-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-aivms-accent">
+                        <option value="2">2 FPS (Low CPU)</option>
+                        <option value="5">5 FPS (Balanced)</option>
+                        <option value="10">10 FPS (High)</option>
+                        <option value="15">15 FPS (Very High)</option>
+                        <option value="30" selected>30 FPS (Maximum)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Higher FPS = smoother tracking but more CPU/GPU usage</p>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-aivms-darker rounded-lg">
+                    <div>
+                        <div class="font-medium">Enable Tracking</div>
+                        <div class="text-xs text-gray-500">ByteTrack multi-object tracking</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="enableTracking" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aivms-accent"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-aivms-darker rounded-lg">
+                    <div>
+                        <div class="font-medium">Enable Pose Detection</div>
+                        <div class="text-xs text-gray-500">Detect person poses for privacy compliance</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="enablePose" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aivms-accent"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="saveDetectionSettings()" class="px-6 py-2 bg-aivms-success hover:bg-green-700 rounded-lg text-sm font-medium transition">
+                    Save Detection Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Recording Settings -->
+        <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path>
+                </svg>
+                Recording Settings
+            </h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Recording Retention (Days)</label>
+                    <input type="number" id="retentionDays" value="7" min="1" max="90"
+                           class="w-full px-4 py-2 bg-aivms-darker border border-aivms-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-aivms-accent">
+                    <p class="text-xs text-gray-500 mt-1">Recordings older than this will be automatically deleted</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Segment Duration (Seconds)</label>
+                    <select id="segmentDuration" class="w-full px-4 py-2 bg-aivms-darker border border-aivms-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-aivms-accent">
+                        <option value="2">2 seconds</option>
+                        <option value="3" selected>3 seconds</option>
+                        <option value="5">5 seconds</option>
+                        <option value="10">10 seconds</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Shorter segments = better scrubbing, larger segments = less storage overhead</p>
+                </div>
+
+                <div class="flex items-center justify-between p-4 bg-aivms-darker rounded-lg">
+                    <div>
+                        <div class="font-medium">Continuous Recording</div>
+                        <div class="text-xs text-gray-500">Record 24/7 or only on motion detection</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="continuousRecording" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-aivms-accent"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="saveRecordingSettings()" class="px-6 py-2 bg-aivms-success hover:bg-green-700 rounded-lg text-sm font-medium transition">
+                    Save Recording Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                System Information
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-aivms-darker p-4 rounded-lg">
+                    <div class="text-sm text-gray-400">AIVMS Version</div>
+                    <div class="text-lg font-semibold mt-1">v1.0.0</div>
+                </div>
+                <div class="bg-aivms-darker p-4 rounded-lg">
+                    <div class="text-sm text-gray-400">Detection Model</div>
+                    <div class="text-lg font-semibold mt-1">YOLO11s</div>
+                </div>
+                <div class="bg-aivms-darker p-4 rounded-lg">
+                    <div class="text-sm text-gray-400">Tracking Algorithm</div>
+                    <div class="text-lg font-semibold mt-1">ByteTrack</div>
+                </div>
+                <div class="bg-aivms-darker p-4 rounded-lg">
+                    <div class="text-sm text-gray-400">Streaming Server</div>
+                    <div class="text-lg font-semibold mt-1">MediaMTX</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            const bgColors = {
+                'success': 'bg-green-600',
+                'error': 'bg-red-600',
+                'warning': 'bg-yellow-600',
+                'info': 'bg-blue-600'
+            };
+
+            toast.className = `${bgColors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Update confidence value display
+        document.getElementById('confidenceSlider').addEventListener('input', (e) => {
+            document.getElementById('confidenceValue').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+
+        // Save detection settings
+        function saveDetectionSettings() {
+            const settings = {
+                confidence: parseFloat(document.getElementById('confidenceSlider').value),
+                fps: parseInt(document.getElementById('detectionFps').value),
+                tracking_enabled: document.getElementById('enableTracking').checked,
+                pose_enabled: document.getElementById('enablePose').checked
+            };
+
+            console.log('Saving detection settings:', settings);
+            showToast('Detection settings saved successfully!', 'success');
+
+            // TODO: Send to backend API
+            // fetch('/api/settings/detection', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(settings)
+            // });
+        }
+
+        // Save recording settings
+        function saveRecordingSettings() {
+            const settings = {
+                retention_days: parseInt(document.getElementById('retentionDays').value),
+                segment_duration: parseInt(document.getElementById('segmentDuration').value),
+                continuous_recording: document.getElementById('continuousRecording').checked
+            };
+
+            console.log('Saving recording settings:', settings);
+            showToast('Recording settings saved successfully!', 'success');
+
+            // TODO: Send to backend API
+            // fetch('/api/settings/recording', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(settings)
+            // });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 AIVMS Settings initialized');
+        });
+    </script>
+</body>
+</html>

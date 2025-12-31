@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVMS Playback</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Authentication Check -->
+    <script src="/js/auth-check.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+        
+        .playback-container { display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Header */
+        .playback-header { background-color: #161b22; border-bottom: 1px solid #30363d; padding: 15px 20px; }
+        .playback-header h1 { font-size: 1.5rem; margin: 0; }
+        
+        /* Main content */
+        .playback-main { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Video player area */
+        .player-area { flex: 1; display: flex; flex-direction: column; background-color: #000; }
+        .video-container { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        .video-container video { width: 100%; height: 100%; object-fit: contain; }
+        .video-loading { position: absolute; color: #888; font-size: 1.2rem; }
+        
+        /* Player controls */
+        .player-controls { background-color: #161b22; border-top: 1px solid #30363d; padding: 12px 15px; }
+        .controls-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .controls-row:last-child { margin-bottom: 0; }
+        
+        .btn-control { background-color: #238636; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s; }
+        .btn-control:hover { background-color: #2ea043; }
+        .btn-control:disabled { background-color: #444; cursor: not-allowed; }
+        
+        .time-display { font-size: 0.85rem; color: #8b949e; min-width: 120px; }
+        
+        /* Timeline scrubber */
+        .timeline-container { background-color: #0d1117; border-top: 1px solid #30363d; padding: 10px 15px; }
+        .timeline-label { font-size: 0.8rem; color: #8b949e; margin-bottom: 5px; }
+        .timeline-scrubber { width: 100%; height: 40px; background-color: #161b22; border-radius: 4px; position: relative; cursor: pointer; display: flex; align-items: center; }
+        .timeline-bucket { flex: 1; height: 100%; background-color: #238636; opacity: 0.6; border-right: 1px solid #0d1117; transition: opacity 0.2s; }
+        .timeline-bucket:hover { opacity: 0.8; }
+        .timeline-bucket.has-motion { background-color: #da3633; opacity: 0.7; }
+        .timeline-playhead { position: absolute; width: 3px; height: 100%; background-color: #58a6ff; top: 0; left: 0%; z-index: 10; }
+        
+        /* Sidebar */
+        .sidebar { width: 300px; background-color: #161b22; border-left: 1px solid #30363d; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar-section { padding: 15px; border-bottom: 1px solid #30363d; }
+        .sidebar-title { font-size: 0.9rem; font-weight: 600; color: #c9d1d9; margin-bottom: 10px; }
+        
+        /* Date/Time picker */
+        .date-time-group { display: flex; flex-direction: column; gap: 8px; }
+        .date-time-input { background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; }
+        .date-time-input:focus { outline: none; border-color: #58a6ff; }
+        
+        /* Camera selector */
+        .camera-selector { background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; }
+        .camera-selector:focus { outline: none; border-color: #58a6ff; }
+        
+        /* Quick presets */
+        .preset-buttons { display: flex; flex-direction: column; gap: 6px; }
+        .btn-preset { background-color: #238636; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: background-color 0.2s; }
+        .btn-preset:hover { background-color: #2ea043; }
+        
+        /* Playback info */
+        .playback-info { font-size: 0.8rem; color: #8b949e; line-height: 1.6; }
+        .info-row { display: flex; justify-content: space-between; }
+        .info-label { color: #8b949e; }
+        .info-value { color: #c9d1d9; font-weight: 500; }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .sidebar { width: 250px; }
+        }
+        
+        @media (max-width: 768px) {
+            .playback-main { flex-direction: column; }
+            .sidebar { width: 100%; height: 200px; border-left: none; border-top: 1px solid #30363d; }
+        }
+    </style>
+</head>
+<body>
+    <div class="playback-container">
+        <!-- Header -->
+        <div class="playback-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1><i class="bi bi-play-circle"></i> Playback</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="/index.html" style="padding: 6px 12px; background-color: #30363d; color: #c9d1d9; text-decoration: none; border-radius: 6px; font-size: 0.85rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#444'" onmouseout="this.style.backgroundColor='#30363d'">
+                    <i class="bi bi-gear"></i> Cameras
+                </a>
+                <a href="/dashboard.html" style="padding: 6px 12px; background-color: #58a6ff; color: white; text-decoration: none; border-radius: 6px; font-size: 0.85rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#4a8fd8'" onmouseout="this.style.backgroundColor='#58a6ff'">
+                    <i class="bi bi-camera-video"></i> Live Dashboard
+                </a>
+                <a href="/health-dashboard.html" style="padding: 6px 12px; background-color: #30363d; color: #c9d1d9; text-decoration: none; border-radius: 6px; font-size: 0.85rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#444'" onmouseout="this.style.backgroundColor='#30363d'">
+                    <i class="bi bi-bar-chart"></i> Health
+                </a>
+                <a href="/settings.html" style="padding: 6px 12px; background-color: #30363d; color: #c9d1d9; text-decoration: none; border-radius: 6px; font-size: 0.85rem; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#444'" onmouseout="this.style.backgroundColor='#30363d'">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="playback-main">
+            <!-- Player area -->
+            <div class="player-area">
+                <!-- Video container -->
+                <div class="video-container">
+                    <video id="videoPlayer"></video>
+                    <div class="video-loading" id="videoLoading" style="display: none;">
+                        <i class="bi bi-hourglass-split"></i> Loading...
+                    </div>
+                </div>
+                
+                <!-- Player controls -->
+                <div class="player-controls">
+                    <div class="controls-row">
+                        <button class="btn-control" id="btnPlay" title="Play">
+                            <i class="bi bi-play-fill"></i> Play
+                        </button>
+                        <button class="btn-control" id="btnPause" title="Pause">
+                            <i class="bi bi-pause-fill"></i> Pause
+                        </button>
+                        <button class="btn-control" id="btnStop" title="Stop">
+                            <i class="bi bi-stop-fill"></i> Stop
+                        </button>
+                        
+                        <div style="flex: 1;"></div>
+                        
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                            <span style="font-size: 0.9rem;">Speed:</span>
+                            <select id="speedControl" style="background-color: #238636; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
+                                <option value="0.5">0.5x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                            </select>
+                        </label>
+                        
+                        <div class="time-display">
+                            <span id="currentTime">00:00:00</span> / <span id="duration">00:00:00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline scrubber -->
+                    <div class="timeline-container">
+                        <div class="timeline-label">Timeline (Hourly Buckets)</div>
+                        <div class="timeline-scrubber" id="timelineScrubber">
+                            <div class="timeline-playhead" id="playhead"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Camera selector -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Camera</div>
+                    <select id="cameraSelector" class="camera-selector" style="width: 100%;">
+                        <option value="">Loading cameras...</option>
+                    </select>
+                </div>
+                
+                <!-- Date/Time picker -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Date & Time</div>
+                    <div class="date-time-group">
+                        <div>
+                            <label style="font-size: 0.8rem; color: #8b949e;">Start Date</label>
+                            <input type="date" id="startDate" class="date-time-input" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #8b949e;">Start Time</label>
+                            <input type="time" id="startTime" class="date-time-input" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #8b949e;">End Date</label>
+                            <input type="date" id="endDate" class="date-time-input" style="width: 100%;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #8b949e;">End Time</label>
+                            <input type="time" id="endTime" class="date-time-input" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick presets -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Quick Presets</div>
+                    <div class="preset-buttons">
+                        <button class="btn-preset" id="presetLastHour">Last Hour</button>
+                        <button class="btn-preset" id="presetLast24h">Last 24 Hours</button>
+                        <button class="btn-preset" id="presetLast7d">Last 7 Days</button>
+                    </div>
+                </div>
+                
+                <!-- Load button -->
+                <div class="sidebar-section">
+                    <button class="btn-control" id="btnLoadPlayback" style="width: 100%;">
+                        <i class="bi bi-download"></i> Load Playback
+                    </button>
+                </div>
+                
+                <!-- Playback info -->
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Info</div>
+                    <div class="playback-info">
+                        <div class="info-row">
+                            <span class="info-label">Segments:</span>
+                            <span class="info-value" id="infoSegments">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Duration:</span>
+                            <span class="info-value" id="infoDuration">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Size:</span>
+                            <span class="info-value" id="infoSize">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="js/playback.js?v=11"></script>
+</body>
+</html>
+

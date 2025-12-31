@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIVMS - Health Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <!-- Authentication Check -->
+    <script src="/js/auth-check.js"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'aivms-dark': '#0d1117',
+                        'aivms-darker': '#010409',
+                        'aivms-border': '#30363d',
+                        'aivms-accent': '#58a6ff',
+                        'aivms-success': '#238636',
+                        'aivms-danger': '#da3633',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .status-healthy { background: #238636; color: white; }
+        .status-warning { background: #ff9800; color: white; }
+        .status-critical { background: #da3633; color: white; }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #30363d;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #238636, #2ea043);
+            transition: width 0.3s ease;
+        }
+        .progress-fill.warning { background: linear-gradient(90deg, #ff9800, #ffc107); }
+        .progress-fill.critical { background: linear-gradient(90deg, #da3633, #f85149); }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 15px;
+            width: 100%;
+        }
+        .chart-container canvas {
+            max-height: 300px;
+        }
+
+        .alerts-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #58a6ff;
+            background: #0d1117;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .alert-item.warning { border-left-color: #ff9800; background: #1c1410; }
+        .alert-item.critical { border-left-color: #da3633; background: #1c1210; }
+        .alert-item.info { border-left-color: #58a6ff; background: #0d1117; }
+
+        .alert-severity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+        .alert-severity.warning { background: #ff9800; color: white; }
+        .alert-severity.critical { background: #da3633; color: white; }
+        .alert-severity.info { background: #58a6ff; color: white; }
+    </style>
+</head>
+<body class="bg-aivms-darker text-gray-100 overflow-x-hidden">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-aivms-dark border-b border-aivms-border px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-white flex items-center">
+                <svg class="w-6 h-6 mr-2 text-aivms-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                AIVMS Health Dashboard
+            </h1>
+            <span class="status-badge" id="overallStatus">Loading...</span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <!-- Navigation Links -->
+            <a href="/index.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Cameras
+            </a>
+            <a href="/dashboard.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                Live
+            </a>
+            <a href="/playback.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Playback
+            </a>
+            <a href="/settings.html" class="px-4 py-2 bg-aivms-border hover:bg-gray-700 rounded-lg text-sm font-medium transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Settings
+            </a>
+            <div class="text-xs text-gray-400">
+                Last updated: <span id="lastUpdate">--:--:--</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="p-6 max-w-7xl mx-auto"
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Disk Usage Card -->
+            <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                    </svg>
+                    Disk Usage
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Total Space</span>
+                        <span class="text-white font-semibold" id="diskTotal">-- GB</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Used</span>
+                        <span class="text-white font-semibold" id="diskUsed">-- GB</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="diskProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Free</span>
+                        <span class="text-white font-semibold" id="diskFree">-- GB</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Growth Rate</span>
+                        <span class="text-white font-semibold" id="diskGrowth">-- GB/h</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-gray-400 text-sm">Time Until Full</span>
+                        <span class="text-white font-semibold" id="diskTimeToFull">-- hours</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IOPS Card -->
+            <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Write Performance (IOPS)
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Current IOPS</span>
+                        <span class="text-white font-semibold" id="currentIops">-- ops/s</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">Throughput</span>
+                        <span class="text-white font-semibold" id="currentThroughput">-- MB/s</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">1-Hour Average</span>
+                        <span class="text-white font-semibold" id="avgIops1h">-- ops/s</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-aivms-border">
+                        <span class="text-gray-400 text-sm">24-Hour Average</span>
+                        <span class="text-white font-semibold" id="avgIops24h">-- ops/s</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-gray-400 text-sm">Total Operations</span>
+                        <span class="text-white font-semibold" id="totalOps">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Card -->
+        <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                Active Alerts
+            </h2>
+            <div class="alerts-list" id="alertsList">
+                <div class="text-gray-400 text-center py-8">Loading alerts...</div>
+            </div>
+        </div>
+
+        <!-- Per-Camera Breakdown -->
+        <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                Per-Camera Metrics
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="cameraGrid">
+                <div class="text-gray-400 text-center py-8 col-span-full">Loading camera data...</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Disk Usage Trend Chart -->
+            <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Disk Usage Trend
+                </h2>
+                <div class="chart-container">
+                    <canvas id="diskChart"></canvas>
+                </div>
+            </div>
+
+            <!-- IOPS Trend Chart -->
+            <div class="bg-aivms-dark border border-aivms-border rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-aivms-accent mb-4 flex items-center border-b border-aivms-border pb-3">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    IOPS Trend
+                </h2>
+                <div class="chart-container">
+                    <canvas id="iopsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let diskChart, iopsChart;
+
+        async function updateDashboard() {
+            try {
+                // Fetch all health data
+                const [statusRes, diskRes, iopsRes, alertsRes, metricsRes] = await Promise.all([
+                    fetch('/api/health/status'),
+                    fetch('/api/health/disk-usage'),
+                    fetch('/api/health/iops'),
+                    fetch('/api/health/alerts'),
+                    fetch('/api/health/metrics?hours=24')
+                ]);
+
+                const status = await statusRes.json();
+                const disk = await diskRes.json();
+                const iops = await iopsRes.json();
+                const alerts = await alertsRes.json();
+                const metrics = await metricsRes.json();
+
+                updateStatus(status);
+                updateDiskMetrics(disk);
+                updateIOPSMetrics(iops);
+                updateAlerts(alerts);
+                updateCameraMetrics(disk);
+                updateCharts(metrics);
+                updateTimestamp();
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        function updateStatus(data) {
+            const badge = document.getElementById('overallStatus');
+            const status = data.overall_status || 'unknown';
+            badge.textContent = status.toUpperCase();
+            badge.className = `status-badge status-${status}`;
+        }
+
+        function updateDiskMetrics(data) {
+            // The API returns disk metrics at the root level, not nested under disk_metrics
+            const disk = data;
+            console.log('Disk metrics data:', disk);
+
+            document.getElementById('diskTotal').textContent = (disk.total_gb || 0).toFixed(1) + ' GB';
+            document.getElementById('diskUsed').textContent = (disk.used_gb || 0).toFixed(1) + ' GB';
+            document.getElementById('diskFree').textContent = (disk.free_gb || 0).toFixed(1) + ' GB';
+            document.getElementById('diskGrowth').textContent = (disk.growth_rate_gb_per_hour || 0).toFixed(2) + ' GB/h';
+            document.getElementById('diskTimeToFull').textContent = (disk.estimated_hours_until_full || 0).toFixed(0) + ' h';
+
+            const percent = disk.percent_used || 0;
+            const progress = document.getElementById('diskProgress');
+            progress.style.width = percent + '%';
+            progress.className = 'progress-fill';
+            if (percent > 85) progress.classList.add('critical');
+            else if (percent > 70) progress.classList.add('warning');
+        }
+
+        function updateIOPSMetrics(data) {
+            const current = data.current || {};
+            const avg1h = data.average_1h || {};
+            const avg24h = data.average_24h || {};
+
+            console.log('IOPS metrics data:', { current, avg1h, avg24h });
+
+            document.getElementById('currentIops').textContent = (current.operations_per_second || 0).toFixed(2) + ' ops/s';
+            document.getElementById('currentThroughput').textContent = (current.throughput_mbps || 0).toFixed(2) + ' MB/s';
+            document.getElementById('avgIops1h').textContent = (avg1h.avg_iops || 0).toFixed(2) + ' ops/s';
+            document.getElementById('avgIops24h').textContent = (avg24h.avg_iops || 0).toFixed(2) + ' ops/s';
+            document.getElementById('totalOps').textContent = (current.total_operations || 0).toLocaleString();
+        }
+
+        function updateAlerts(data) {
+            const alertsList = document.getElementById('alertsList');
+            const alerts = data.alerts || [];
+
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<div class="text-aivms-success text-center py-8">✓ No active alerts</div>';
+                return;
+            }
+
+            alertsList.innerHTML = alerts.slice(-10).reverse().map(alert => `
+                <div class="alert-item ${alert.severity}">
+                    <span class="alert-severity ${alert.severity}">${alert.severity.toUpperCase()}</span>
+                    <strong class="text-white">${alert.alert_type}</strong>: <span class="text-gray-300">${alert.message}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateCameraMetrics(data) {
+            const grid = document.getElementById('cameraGrid');
+            const cameras = data.camera_usage || [];
+
+            if (cameras.length === 0) {
+                grid.innerHTML = '<div class="text-gray-400 text-center py-8 col-span-full">No camera data available</div>';
+                return;
+            }
+
+            grid.innerHTML = cameras.map(cam => `
+                <div class="bg-aivms-darker border border-aivms-border rounded-lg p-4">
+                    <div class="font-semibold text-aivms-accent mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        ${cam.camera_name}
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-gray-400">Storage:</span>
+                            <span class="text-white font-medium">${cam.total_gb.toFixed(2)} GB (${cam.percent_of_total.toFixed(1)}%)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-gray-400">Segments:</span>
+                            <span class="text-white font-medium">${cam.segment_count.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1">
+                            <span class="text-gray-400">Growth:</span>
+                            <span class="text-white font-medium">${cam.growth_rate_gb_per_hour.toFixed(2)} GB/h</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateCharts(data) {
+            try {
+                const diskMetrics = data.disk_metrics || [];
+                const cameraMetrics = data.camera_metrics || {};
+
+                console.log('Chart data received:', { diskMetrics: diskMetrics.length, cameraMetrics: Object.keys(cameraMetrics) });
+
+                // Disk Chart - Convert bytes to GB
+                if (diskChart) diskChart.destroy();
+                const diskCtx = document.getElementById('diskChart');
+                if (!diskCtx) {
+                    console.error('Disk chart canvas not found');
+                    return;
+                }
+
+                diskChart = new Chart(diskCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: diskMetrics.map((_, i) => i),
+                        datasets: [{
+                            label: 'Used GB',
+                            data: diskMetrics.map(d => {
+                                const usedGB = (d.used_bytes || 0) / (1024 * 1024 * 1024);
+                                return parseFloat(usedGB.toFixed(2));
+                            }),
+                            borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: { color: '#c9d1d9' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#8b949e' },
+                                grid: { color: '#30363d' }
+                            },
+                            x: {
+                                ticks: { color: '#8b949e' },
+                                grid: { color: '#30363d' }
+                            }
+                        }
+                    }
+                });
+
+                // IOPS Chart - Get first camera's data for trend
+                if (iopsChart) iopsChart.destroy();
+                const iopsCtx = document.getElementById('iopsChart');
+                if (!iopsCtx) {
+                    console.error('IOPS chart canvas not found');
+                    return;
+                }
+
+                // Get the first camera's metrics for IOPS trend
+                let iopsData = [];
+                const firstCamera = Object.keys(cameraMetrics)[0];
+                if (firstCamera && cameraMetrics[firstCamera]) {
+                    // Use segment count as proxy for IOPS trend (more segments = more writes)
+                    iopsData = cameraMetrics[firstCamera].map(m => m.segment_count || 0);
+                }
+
+                console.log('IOPS data points:', iopsData.length);
+
+                iopsChart = new Chart(iopsCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: iopsData.map((_, i) => i),
+                        datasets: [{
+                            label: 'Segment Count (Write Activity)',
+                            data: iopsData,
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: { color: '#c9d1d9' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#8b949e' },
+                                grid: { color: '#30363d' }
+                            },
+                            x: {
+                                ticks: { color: '#8b949e' },
+                                grid: { color: '#30363d' }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating charts:', error);
+            }
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+        }
+
+        // Initial load and refresh every 5 seconds
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+    </script>
+</body>
+</html>
+

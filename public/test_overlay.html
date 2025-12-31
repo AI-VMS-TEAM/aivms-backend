@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Zone Overlay Test</title>
+    <style>
+        body { margin: 20px; background: #1a1a1a; color: white; font-family: Arial; }
+        #container { position: relative; width: 1280px; height: 720px; background: #000; margin: 20px auto; }
+        video { width: 100%; height: 100%; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #info { text-align: center; margin: 20px; }
+        .status { padding: 10px; margin: 10px; background: #333; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Zone Overlay Test - Bosch Front Cam</h1>
+    <div id="info">
+        <div class="status" id="videoStatus">Video: Loading...</div>
+        <div class="status" id="zoneStatus">Zones: Loading...</div>
+        <div class="status" id="trackStatus">Tracks: Waiting...</div>
+    </div>
+    <div id="container">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let zones = [];
+        let tracks = [];
+        
+        // Status updates
+        function updateStatus(id, text, color = '#4CAF50') {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.style.background = color;
+        }
+        
+        // Load HLS stream
+        const streamUrl = 'http://localhost:8888/bosch_front_cam/index.m3u8';
+        let hls = null;
+
+        function loadStream() {
+            if (hls) hls.destroy();
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 60,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 10,
+                    liveDurationInfinity: true,
+                    highBufferWatchdogPeriod: 2
+                });
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play().catch(e => console.warn('Autoplay failed:', e));
+                    updateStatus('videoStatus', 'Video: Playing ✓');
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.warn('HLS Error:', data.type, data.details);
+
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log('Network error, attempting recovery');
+                                updateStatus('videoStatus', 'Video: Recovering...', '#FFA500');
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('Media error, attempting recovery');
+                                updateStatus('videoStatus', 'Video: Recovering...', '#FFA500');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                console.error('Fatal error, reloading stream');
+                                updateStatus('videoStatus', 'Video: Reloading...', '#FFA500');
+                                setTimeout(loadStream, 2000);
+                                break;
+                        }
+                    }
+                });
+            }
+        }
+
+        loadStream();
+
+        // Handle tab visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && video.paused) {
+                console.log('Tab became visible, resuming video');
+                video.play().catch(e => console.warn('Failed to resume video:', e));
+            }
+        });
+        
+        // Resize canvas when video loads
+        video.addEventListener('loadedmetadata', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            console.log(`Canvas: ${canvas.width}x${canvas.height}`);
+        });
+        
+        // Fetch zones
+        fetch('/api/zones/list?camera_id=bosch_front_cam')
+            .then(r => r.json())
+            .then(data => {
+                zones = data.zones || [];
+                updateStatus('zoneStatus', `Zones: Loaded ${zones.length} zones ✓`);
+                console.log('Zones:', zones);
+            })
+            .catch(e => {
+                updateStatus('zoneStatus', `Zones Error: ${e.message}`, '#f44336');
+            });
+        
+        // Connect WebSocket
+        const socket = io('http://localhost:3000/detections');
+        socket.on('connect', () => {
+            socket.emit('subscribe', { camera_id: 'bosch_front_cam' });
+            updateStatus('trackStatus', 'Tracks: Connected ✓');
+        });
+        socket.on('detections', (data) => {
+            if (data.camera_id === 'bosch_front_cam') {
+                // Use tracks if available, otherwise use detections
+                if (data.tracks && data.tracks.length > 0) {
+                    tracks = data.tracks;
+                    updateStatus('trackStatus', `Tracks: ${tracks.length} objects`);
+                    console.log('Received tracks:', tracks);
+                } else if (data.detections && data.detections.length > 0) {
+                    // Fallback to detections if no tracks
+                    tracks = data.detections;
+                    updateStatus('trackStatus', `Detections: ${tracks.length} objects`);
+                    console.log('Received detections:', tracks);
+                }
+            }
+        });
+        
+        // Draw function
+        function draw() {
+            // Ensure canvas is sized
+            if (canvas.width === 0 || canvas.height === 0) {
+                if (video.videoWidth > 0) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    console.log(`Canvas sized in draw: ${canvas.width}x${canvas.height}`);
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw a test rectangle to verify canvas is working
+            ctx.fillStyle = 'rgba(255, 0, 255, 0.3)';
+            ctx.fillRect(50, 50, 200, 100);
+            ctx.strokeStyle = '#FF00FF';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(50, 50, 200, 100);
+            ctx.fillStyle = '#FF00FF';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('CANVAS TEST', 60, 110);
+
+            // Draw zones
+            zones.forEach(zone => {
+                const polygon = zone.polygon;
+                if (!polygon || polygon.length < 3) return;
+                
+                const color = hexToRgb(zone.color);
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
+                ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.8)`;
+                ctx.lineWidth = 3;
+                
+                ctx.beginPath();
+                ctx.moveTo(polygon[0][0], polygon[0][1]);
+                for (let i = 1; i < polygon.length; i++) {
+                    ctx.lineTo(polygon[i][0], polygon[i][1]);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // Zone label
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 1)`;
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText(zone.name, polygon[0][0] + 10, polygon[0][1] + 30);
+            });
+            
+            // Draw tracks
+            tracks.forEach(track => {
+                const bbox = track.bbox;
+                if (!bbox || bbox.length < 4) return;
+
+                const className = track.class;
+                const isPerson = className === 'person';
+
+                // bbox is in [x1, y1, x2, y2] format
+                const x1 = bbox[0];
+                const y1 = bbox[1];
+                const x2 = bbox[2];
+                const y2 = bbox[3];
+
+                // Draw based on class type
+                if (isPerson && track.pose && track.pose.keypoints) {
+                    // Draw pose skeleton for persons
+                    drawPoseSkeleton(ctx, track.pose.keypoints);
+
+                    // Draw label above skeleton
+                    const label = `ID:${track.track_id} ${track.class} ${track.dwell_time?.toFixed(1) || 0}s`;
+                    ctx.fillStyle = '#FF00FF';  // Magenta for persons
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText(label, x1, y1 - 10);
+                } else {
+                    // Draw bounding box for vehicles
+                    const color = getClassColor(className);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                    const label = `ID:${track.track_id} ${track.class} ${track.dwell_time?.toFixed(1) || 0}s`;
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText(label, x1, y1 - 10);
+                }
+            });
+            
+            requestAnimationFrame(draw);
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 255, g: 255, b: 255 };
+        }
+
+        function getClassColor(className) {
+            // Color coding by class
+            const colors = {
+                'person': '#FF00FF',  // Magenta
+                'car': '#00FF00',     // Green
+                'truck': '#FFFF00',   // Yellow
+                'bus': '#FF6600',     // Orange
+                'motorcycle': '#00FFFF', // Cyan
+                'bicycle': '#FF00AA'  // Pink
+            };
+            return colors[className] || '#00FF00';  // Default green
+        }
+
+        function drawPoseSkeleton(ctx, keypoints) {
+            // COCO 17 keypoints skeleton connections
+            const skeleton = [
+                [0, 1], [0, 2],  // nose to eyes
+                [1, 3], [2, 4],  // eyes to ears
+                [0, 5], [0, 6],  // nose to shoulders
+                [5, 6],  // shoulders
+                [5, 7], [7, 9],  // left arm
+                [6, 8], [8, 10],  // right arm
+                [5, 11], [6, 12],  // shoulders to hips
+                [11, 12],  // hips
+                [11, 13], [13, 15],  // left leg
+                [12, 14], [14, 16],  // right leg
+            ];
+
+            const minConfidence = 0.5;
+
+            // Draw skeleton lines
+            ctx.strokeStyle = '#FF00FF';  // Magenta
+            ctx.lineWidth = 3;
+            skeleton.forEach(([startIdx, endIdx]) => {
+                const start = keypoints[startIdx];
+                const end = keypoints[endIdx];
+
+                if (start && end && start[2] > minConfidence && end[2] > minConfidence) {
+                    ctx.beginPath();
+                    ctx.moveTo(start[0], start[1]);
+                    ctx.lineTo(end[0], end[1]);
+                    ctx.stroke();
+                }
+            });
+
+            // Draw keypoints
+            ctx.fillStyle = '#FF00FF';  // Magenta
+            keypoints.forEach(kpt => {
+                if (kpt && kpt[2] > minConfidence) {
+                    ctx.beginPath();
+                    ctx.arc(kpt[0], kpt[1], 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // Start drawing
+        draw();
+    </script>
+</body>
+</html>
+

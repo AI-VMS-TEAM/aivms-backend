@@ -1,0 +1,84 @@
+# ByteTrack Configuration for Dealership Surveillance
+# Vision 30: Multi-Object Tracking Implementation
+
+# Tracker type (do not change)
+tracker_type: bytetrack
+
+# First association threshold (high-confidence detections)
+# Detections with confidence >= track_high_thresh are used in first association
+# Higher value = more conservative, only very confident detections
+# Range: 0.0-1.0, Default: 0.5
+# Lowered to 0.4 to match detection confidence threshold
+track_high_thresh: 0.4
+
+# Second association threshold (low-confidence detections)
+# Detections with confidence >= track_low_thresh are used in second association
+# This helps recover tracks from occlusions and partial detections
+# Range: 0.0-1.0, Default: 0.1
+track_low_thresh: 0.1
+
+# Threshold to create new track
+# Only detections with confidence >= new_track_thresh can start new tracks
+# Higher value = fewer false tracks, but may miss real objects
+# Range: 0.0-1.0, Default: 0.6
+# Lowered to 0.4 to allow tracking of all detected objects
+new_track_thresh: 0.4
+
+# Frames to keep track alive without detection (track buffer)
+# At 10 FPS, 90 frames = 9 seconds
+# Higher value = more tolerance for occlusions, but more memory usage
+# Range: >=0, Default: 30
+# Increased to 90 to keep tracks stable even if detection misses frames
+track_buffer: 90
+
+# IoU threshold for matching tracks to detections
+# Higher value = stricter matching (bboxes must overlap more)
+# Lower value = more lenient matching (allows more variation)
+# Range: 0.0-1.0, Default: 0.8
+# Lowered to 0.5 for more stable tracking with less strict matching
+match_thresh: 0.5
+
+# Fuse confidence scores with IoU distances before matching
+# True = consider both spatial overlap and detection confidence
+# False = only use spatial overlap (IoU)
+# Default: True
+fuse_score: true
+
+# Global motion compensation method
+# Helps account for camera movement to improve tracking
+# Options: orb, sift, ecc, sparseOptFlow, None
+# - orb: Fast, good for slight movement
+# - sift: Slower, more accurate
+# - ecc: Enhanced correlation coefficient
+# - sparseOptFlow: Optical flow, good for camera shake
+# - None: No compensation (for static cameras)
+# Default: sparseOptFlow
+gmc_method: sparseOptFlow
+
+# Re-identification (ReID) settings
+# ReID uses appearance features to match tracks across occlusions
+# Disabled by default for performance
+
+# Enable ReID (appearance-based matching)
+# True = use appearance features (slower but better ID persistence)
+# False = use only motion (faster)
+# Default: False
+with_reid: false
+
+# ReID model to use
+# Options: auto, yolo11n-cls.pt, yolo11s-cls.pt, etc.
+# - auto: Use native features from detector (fastest)
+# - yolo11n-cls.pt: Lightweight classification model
+# Default: auto
+# model: auto
+
+# Minimum IoU required for valid match with ReID
+# Only used when with_reid=true
+# Range: 0.0-1.0, Default: 0.8
+# proximity_thresh: 0.8
+
+# Minimum appearance similarity required for ReID
+# Only used when with_reid=true
+# Range: 0.0-1.0, Default: 0.5
+# appearance_thresh: 0.5
+

@@ -1,0 +1,147 @@
+# Camera Calibration Configuration
+# 3D calibration for accurate object detection (like Bosch IVA Pro)
+#
+# Each camera needs:
+# 1. Physical parameters (height, angle)
+# 2. Perspective transform (4 ground reference points)
+# 3. Object size filters (min/max real-world dimensions)
+
+# Bosch Front Cam - Entrance Camera
+bosch_front_cam:
+  # Camera physical parameters
+  enabled: true
+  camera_height_meters: 3.0  # Height of camera above ground
+  camera_angle_degrees: 30   # Downward tilt angle
+  
+  # Perspective transform calibration
+  # Define 4 points on the ground plane in pixel coordinates
+  # These form a rectangle in real-world coordinates
+  # Format: [x_pixel, y_pixel]
+  # Order: top-left, top-right, bottom-right, bottom-left
+  perspective_points:
+    pixel_coords:
+      - [400, 300]   # Top-left corner on ground
+      - [1520, 300]  # Top-right corner on ground
+      - [1700, 900]  # Bottom-right corner on ground
+      - [220, 900]   # Bottom-left corner on ground
+    
+    # Real-world dimensions of the calibration rectangle (meters)
+    # This tells the system: "These 4 points form a 10m x 8m rectangle on the ground"
+    real_world_width_meters: 10.0   # Width of rectangle in real world
+    real_world_height_meters: 8.0   # Height of rectangle in real world
+  
+  # Object size filters (real-world dimensions in meters)
+  object_filters:
+    person:
+      min_width: 0.3   # Minimum person width (meters)
+      max_width: 1.0   # Maximum person width (meters)
+      min_height: 0.4  # Minimum person height (meters)
+      max_height: 2.5  # Maximum person height (meters)
+    
+    car:
+      min_width: 1.5   # Minimum car width (meters)
+      max_width: 2.5   # Maximum car width (meters)
+      min_height: 3.0  # Minimum car length (meters)
+      max_height: 6.0  # Maximum car length (meters)
+    
+    truck:
+      min_width: 2.0
+      max_width: 3.5
+      min_height: 5.0
+      max_height: 15.0
+  
+  # Minimum detection area in pixels (filter out tiny detections)
+  min_detection_area_pixels: 400  # Ignore detections smaller than 20x20 pixels
+
+# Wisenet Front - Showroom Camera
+wisenet_front:
+  enabled: false  # Disable until camera is pointed at real scene
+  camera_height_meters: 2.5
+  camera_angle_degrees: 45
+  
+  perspective_points:
+    pixel_coords:
+      - [300, 250]
+      - [1620, 250]
+      - [1800, 950]
+      - [120, 950]
+    real_world_width_meters: 12.0
+    real_world_height_meters: 10.0
+  
+  object_filters:
+    person:
+      min_width: 0.3
+      max_width: 1.0
+      min_height: 0.4
+      max_height: 2.5
+    car:
+      min_width: 1.5
+      max_width: 2.5
+      min_height: 3.0
+      max_height: 6.0
+  
+  min_detection_area_pixels: 400
+
+# Dahua Front Cam - Parking Camera
+dahua_front_cam:
+  enabled: false  # Disable until camera is pointed at real scene
+  camera_height_meters: 4.0
+  camera_angle_degrees: 25
+  
+  perspective_points:
+    pixel_coords:
+      - [350, 200]
+      - [1570, 200]
+      - [1750, 950]
+      - [170, 950]
+    real_world_width_meters: 15.0
+    real_world_height_meters: 12.0
+  
+  object_filters:
+    person:
+      min_width: 0.3
+      max_width: 1.0
+      min_height: 0.4
+      max_height: 2.5
+    car:
+      min_width: 1.5
+      max_width: 2.5
+      min_height: 3.0
+      max_height: 6.0
+    truck:
+      min_width: 2.0
+      max_width: 3.5
+      min_height: 5.0
+      max_height: 15.0
+  
+  min_detection_area_pixels: 400
+
+# Axis Front Cam - Security Camera
+axis_front_cam:
+  enabled: false  # Disable until camera is pointed at real scene
+  camera_height_meters: 3.5
+  camera_angle_degrees: 35
+  
+  perspective_points:
+    pixel_coords:
+      - [380, 280]
+      - [1540, 280]
+      - [1720, 920]
+      - [200, 920]
+    real_world_width_meters: 10.0
+    real_world_height_meters: 8.0
+  
+  object_filters:
+    person:
+      min_width: 0.3
+      max_width: 1.0
+      min_height: 0.4
+      max_height: 2.5
+    car:
+      min_width: 1.5
+      max_width: 2.5
+      min_height: 3.0
+      max_height: 6.0
+  
+  min_detection_area_pixels: 400
+
