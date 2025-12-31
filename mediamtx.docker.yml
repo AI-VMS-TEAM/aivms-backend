@@ -1,0 +1,66 @@
+# MediaMTX Configuration for Docker Deployment
+# This file is used inside the Docker container
+
+# Enable the web dashboard and API
+api: yes
+apiAddress: 0.0.0.0:5555
+
+# RTSP Server
+rtsp: yes
+rtspAddress: :8554
+protocols: [tcp, udp]
+
+# RTMP Server (optional)
+rtmp: yes
+rtmpAddress: :1935
+
+# HLS Server (for web playback)
+hls: yes
+hlsAddress: :8888
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsMuxerCloseAfter: 60s
+hlsAlwaysRemux: no
+
+# WebRTC (optional - for low-latency browser playback)
+webrtc: yes
+webrtcAddress: :8889
+
+# Recording configuration
+# Recordings are stored in Docker volume
+pathDefaults:
+  record: yes
+  recordPath: /recordings/%path/%Y-%m-%d/%H-%M-%S-%ms_%s
+  recordFormat: fmp4
+  recordSegmentDuration: 3s
+  recordDeleteAfter: 168h  # 7 days
+
+# Logging
+logLevel: info
+logDestinations: [stdout]
+
+# Read timeout for RTSP sources
+readTimeout: 10s
+writeTimeout: 10s
+
+# Camera paths - UPDATE THESE WITH YOUR CAMERA RTSP URLs
+# The path name should match the camera_id in your Flask app
+paths:
+  # Example cameras - replace with your actual camera URLs
+  # front_camera:
+  #   source: rtsp://admin:password@192.168.1.100:554/stream
+  #   sourceOnDemand: no
+  #   runOnReady: ""
+  #   runOnNotReady: ""
+  
+  # back_camera:
+  #   source: rtsp://admin:password@192.168.1.101:554/stream
+  #   sourceOnDemand: no
+
+  # Placeholder - remove and add your actual cameras
+  test_stream:
+    source: rtsp://localhost:8554/test
+    sourceOnDemand: yes

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Front Camera",
+    "rtsp_url": "rtsp://admin:password@YOUR_CAMERA_IP:554/stream",
+    "enabled": true,
+    "description": "Main entrance camera"
+  },
+  {
+    "name": "Back Camera",
+    "rtsp_url": "rtsp://admin:password@YOUR_CAMERA_IP:554/stream",
+    "enabled": false,
+    "description": "Rear parking camera"
+  },
+  {
+    "name": "Side Camera",
+    "rtsp_url": "rtsp://admin:password@YOUR_CAMERA_IP:554/stream",
+    "enabled": false,
+    "description": "Side entrance camera"
+  },
+  {
+    "name": "Indoor Camera",
+    "rtsp_url": "rtsp://admin:password@YOUR_CAMERA_IP:554/stream",
+    "enabled": false,
+    "description": "Indoor monitoring camera"
+  }
+]

@@ -1,0 +1,106 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker/
+
+# Test files
+test_*.py
+tests/
+accuracy_test_*.json
+*_test.py
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Development files
+*.log
+*.tmp
+*.bak
+*.bat
+*.ps1
+DEBUG_*.py
+diagnose.py
+check_*.py
+
+# Local configuration (use mounted volumes)
+config.ini
+cameras.json
+
+# Recordings (use volumes)
+storage/
+recordings/
+*.db
+
+# Large model files (will be downloaded on first run)
+*.pt
+*.onnx
+*.engine
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/

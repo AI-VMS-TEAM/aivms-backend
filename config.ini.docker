@@ -1,0 +1,135 @@
+[Network]
+# NVR IP address (update with your actual NVR IP)
+nvr_ip = YOUR_NVR_IP
+
+[Recording]
+# Enable continuous recording
+enabled = true
+
+# Storage path for recordings (Docker volume mount point)
+storage_path = /app/storage/recordings
+
+# Database path
+db_path = /app/data/recordings.db
+
+# Segment duration in milliseconds
+segment_duration_ms = 3000
+
+# Retention period in days
+retention_days = 7
+
+# Cleanup interval in hours
+cleanup_interval_hours = 1
+
+# Maximum retries for failed segments
+max_retries = 3
+
+# Verify file integrity on startup
+verify_integrity = true
+
+[Detection]
+# Enable object detection
+enabled = true
+
+# Model to use (rtdetr-l for accuracy, yolo11m for speed)
+model = yolo11m
+
+# Detection classes to detect
+classes = person,vehicle,truck,animal
+
+# Frames per second for detection (lower for CPU-only)
+detection_fps = 5.0
+
+# Minimum confidence threshold
+confidence_threshold = 0.5
+
+# Use GPU for inference (set false for CPU-only droplet)
+use_gpu = false
+gpu_enabled = false
+
+# Maximum number of objects to track
+max_objects = 100
+
+# Tracking algorithm
+tracker = bytetrack
+
+[Tracking]
+# Enable object tracking
+enabled = true
+
+# Maximum distance for track association
+max_distance = 50.0
+
+[Cameras]
+# Number of cameras
+camera_count = 4
+
+[Camera_1]
+name = Camera 1
+rtsp_url = rtsp://admin:password@YOUR_CAMERA_IP:554/stream
+enabled = true
+
+[Camera_2]
+name = Camera 2
+rtsp_url = rtsp://admin:password@YOUR_CAMERA_IP:554/stream
+enabled = false
+
+[Camera_3]
+name = Camera 3
+rtsp_url = rtsp://admin:password@YOUR_CAMERA_IP:554/stream
+enabled = false
+
+[Camera_4]
+name = Camera 4
+rtsp_url = rtsp://admin:password@YOUR_CAMERA_IP:554/stream
+enabled = false
+
+[Database]
+# Database path (SQLite)
+db_path = /app/data/recordings.db
+
+# Enable WAL mode for better concurrency
+wal_mode = true
+
+[API]
+# Flask server host
+host = 0.0.0.0
+
+# Flask server port
+port = 3000
+
+# Enable debug mode (disable in production)
+debug = false
+
+# CORS allowed origins
+cors_origins = *
+
+[Logging]
+# Log level
+log_level = INFO
+
+# Log file path
+log_file = /app/logs/aivms.log
+
+# Maximum log file size in MB
+max_log_size_mb = 50
+
+# Number of backup log files
+backup_count = 5
+
+[Zones]
+# Enable zone-based analytics
+enabled = true
+
+# Zone configuration file
+zones_file = /app/config/zones.yaml
+
+[Performance]
+# Number of worker threads for detection
+worker_threads = 2
+
+# Enable frame skipping during high load
+enable_frame_skip = true
+
+# Maximum queue size for frames
+max_queue_size = 50
