@@ -46,7 +46,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     polars==1.35.2 \
     opencv-python-headless==4.10.0.84 \
     gunicorn==23.0.0 \
-    eventlet==0.37.0
+    eventlet==0.37.0 \
+    lap==0.5.12
 
 # Install PyTorch (CPU version for Digital Ocean - most droplets don't have GPU)
 # For GPU droplet, uncomment the CUDA version below
