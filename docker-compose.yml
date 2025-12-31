@@ -50,6 +50,7 @@ services:
     environment:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+      - MEDIAMTX_HOST=mediamtx
     depends_on:
       mediamtx:
         condition: service_started

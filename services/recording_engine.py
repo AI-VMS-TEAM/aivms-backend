@@ -165,7 +165,8 @@ class RecordingEngine:
         Runs in a separate thread for each camera.
         Includes error detection and auto-recovery.
         """
-        hls_url = f"http://localhost:8888/{camera_id}/index.m3u8"
+        mediamtx_host = os.environ.get('MEDIAMTX_HOST', 'localhost')
+        hls_url = f"http://{mediamtx_host}:8888/{camera_id}/index.m3u8"
         camera_storage = self.storage_path / camera_id
         camera_storage.mkdir(parents=True, exist_ok=True)
 

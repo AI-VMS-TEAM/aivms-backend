@@ -1,4 +1,5 @@
 import configparser
+import os
 from flask import Flask
 from flask_socketio import SocketIO
 from datetime import datetime, timedelta
@@ -130,9 +131,11 @@ tracking_service.set_zone_event_callback(broadcast_zone_event)
 # Initialize Frame Extractors for each camera
 frame_extractors = {}
 detection_fps = float(config.get('Detection', 'detection_fps', fallback='2.0'))
+# Use environment variable for MediaMTX host (for Docker support)
+mediamtx_host = os.environ.get('MEDIAMTX_HOST', 'localhost')
 for camera in camera_manager.cameras:
     camera_id = camera.get('name', '').lower().replace(' ', '_').replace('-', '_')
-    hls_url = f"http://localhost:8888/{camera_id}/index.m3u8"
+    hls_url = f"http://{mediamtx_host}:8888/{camera_id}/index.m3u8"
     extractor = FrameExtractor(
         hls_url=hls_url,
         camera_id=camera_id,
