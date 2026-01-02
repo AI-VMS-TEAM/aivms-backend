@@ -10,10 +10,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Get recordings path from environment variable or use default
-# Priority: Environment variable > Default D drive
+# Priority: Environment variable > Default path
+# Docker: Set RECORDINGS_PATH=/app/storage/recordings
+# Windows: Set RECORDINGS_PATH=D:\recordings
+# Linux: Set RECORDINGS_PATH=/var/lib/aivms/recordings
 RECORDINGS_BASE_PATH = os.getenv(
     'RECORDINGS_PATH',
-    'D:\\recordings'  # Default to D drive (dedicated recordings partition)
+    './storage/recordings'  # Default to local storage (cross-platform)
 )
 
 # Ensure base path exists

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  edge:
+    build:
+      context: ..
+      dockerfile: edge/Dockerfile
+    container_name: aivms-edge
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Cloud connection
+      - CLOUD_URL=${CLOUD_URL:-https://your-cloud-server.com}
+      - EDGE_ID=${EDGE_ID}
+      - EDGE_SECRET=${EDGE_SECRET}
+      
+      # Detection settings
+      - DETECTION_MODEL=${DETECTION_MODEL:-yolo11n.pt}
+      - DETECTION_CONFIDENCE=${DETECTION_CONFIDENCE:-0.5}
+      - DETECTION_FPS=${DETECTION_FPS:-5}
+      
+      # Storage
+      - EDGE_STORAGE_PATH=/app/storage
+      - RECORDING_RETENTION_DAYS=${RECORDING_RETENTION_DAYS:-7}
+    volumes:
+      # Persistent storage for recordings
+      - edge_recordings:/app/storage/recordings
+      - edge_clips:/app/storage/clips
+      
+      # YOLO models (optional - can download on startup)
+      - edge_models:/app/models
+      
+      # Camera configuration
+      - ./cameras.json:/app/cameras.json:ro
+      - ./config/zones.yaml:/app/config/zones.yaml:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  edge_recordings:
+  edge_clips:
+  edge_models:

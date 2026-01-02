@@ -1,0 +1,29 @@
+# Cloud server requirements
+# Lightweight - no ML dependencies needed
+
+# Core Flask
+flask==3.0.0
+flask-socketio==5.3.6
+flask-cors==4.0.0
+gunicorn==21.2.0
+eventlet==0.34.2
+
+# Authentication
+pyjwt==2.8.0
+bcrypt==4.1.2
+
+# HTTP client
+requests==2.31.0
+
+# Database (SQLite for now, can upgrade to PostgreSQL)
+# psycopg2-binary==2.9.9
+
+# Configuration
+python-dotenv==1.0.0
+
+# Email
+# For production, consider using SendGrid or AWS SES
+# sendgrid==6.11.0
+
+# Utilities
+python-dateutil==2.8.2

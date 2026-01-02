@@ -1,0 +1,30 @@
+# Edge device requirements
+# Optimized for ML inference and video processing
+
+# Core Flask
+flask==3.0.0
+flask-socketio==5.3.6
+flask-cors==4.0.0
+
+# WebSocket client for cloud connection
+python-socketio[client]==5.10.0
+websocket-client==1.6.4
+requests==2.31.0
+
+# ML Inference
+ultralytics==8.2.0
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python-headless==4.8.1.78
+numpy>=1.24.0
+
+# Video processing
+av==11.0.0
+
+# Configuration
+python-dotenv==1.0.0
+pyyaml==6.0.1
+
+# Utilities
+pillow>=10.0.0
+scipy>=1.11.0

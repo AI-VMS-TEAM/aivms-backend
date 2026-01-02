@@ -51,6 +51,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - MEDIAMTX_HOST=mediamtx
+      - RECORDINGS_PATH=/app/storage/recordings
       - DETECTION_ENABLED=false  # Disable for low-memory droplets, enable when needed
     depends_on:
       mediamtx:
