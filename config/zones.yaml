@@ -20,6 +20,7 @@
 # - service_area: Service department (service customers)
 # - parking_lot: Parking lot (vehicle parking)
 # - office: Office area (staff only)
+# - security: Security perimeter (after-hours monitoring)
 # - waiting_area: Waiting area (customers waiting)
 
 # Camera Location Metadata
