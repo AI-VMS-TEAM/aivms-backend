@@ -10,15 +10,15 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-from cloud.config import CloudConfig
-from cloud.services.edge_manager import EdgeManager
-from cloud.services.tenant_service import TenantService
-from cloud.services.event_service import EventService
-from cloud.services.alert_service import AlertService
-from cloud.controllers.edge_routes import edge_bp, set_edge_manager
-from cloud.controllers.tenant_routes import tenant_bp, set_tenant_service
-from cloud.controllers.event_routes import event_bp, set_event_service
-from cloud.controllers.auth_routes import auth_bp
+from config import CloudConfig
+from services.edge_manager import EdgeManager
+from services.tenant_service import TenantService
+from services.event_service import EventService
+from services.alert_service import AlertService
+from controllers.edge_routes import edge_bp, set_edge_manager
+from controllers.tenant_routes import tenant_bp, set_tenant_service
+from controllers.event_routes import event_bp, set_event_service
+from controllers.auth_routes import auth_bp
 
 # Configure logging
 logging.basicConfig(
