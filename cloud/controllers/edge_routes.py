@@ -9,6 +9,15 @@ from datetime import datetime
 
 edge_bp = Blueprint('edge', __name__, url_prefix='/api/edge')
 
+# Module-level service reference
+_edge_manager = None
+
+
+def set_edge_manager(manager):
+    """Set the edge manager instance."""
+    global _edge_manager
+    _edge_manager = manager
+
 
 def get_tenant_service():
     """Get tenant service from app context."""

@@ -8,6 +8,15 @@ from .auth_routes import token_required, admin_required
 
 tenant_bp = Blueprint('tenant', __name__, url_prefix='/api/tenant')
 
+# Module-level service reference
+_tenant_service = None
+
+
+def set_tenant_service(service):
+    """Set the tenant service instance."""
+    global _tenant_service
+    _tenant_service = service
+
 
 def get_tenant_service():
     """Get tenant service from app context."""

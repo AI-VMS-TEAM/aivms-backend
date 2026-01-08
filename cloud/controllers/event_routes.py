@@ -10,6 +10,15 @@ import os
 
 event_bp = Blueprint('events', __name__, url_prefix='/api/events')
 
+# Module-level service reference
+_event_service = None
+
+
+def set_event_service(service):
+    """Set the event service instance."""
+    global _event_service
+    _event_service = service
+
 
 def get_event_service():
     """Get event service from app context."""
