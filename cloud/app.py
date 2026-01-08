@@ -174,6 +174,7 @@ def handle_subscribe_events(data):
 # Health Check
 # ============================================
 
+@app.route('/health')
 @app.route('/api/health')
 def health_check():
     """Cloud health check endpoint."""
