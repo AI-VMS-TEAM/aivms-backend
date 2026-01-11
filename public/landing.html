@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIVMS - AI Video Surveillance for Car Dealerships</title>
+<meta name="description" content="Protect your dealership 24/7 with AI-powered video surveillance. Real-time detection, instant alerts, zero false alarms.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#000;color:#fff;line-height:1.6;overflow-x:hidden}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes detectBox{0%{opacity:0;transform:scale(0.8)}50%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(0,112,243,0.3)}50%{box-shadow:0 0 40px rgba(0,112,243,0.6)}}
+.container{max-width:1400px;margin:0 auto;padding:0 24px}
+.section{padding:120px 0;position:relative}
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#000 0%,#0a0a1a 50%,#000 100%);background-size:200% 200%;animation:gradientShift 15s ease infinite}
+.hero-content{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;z-index:10}
+.hero-text h1{font-size:4.5rem;font-weight:800;margin-bottom:1.5rem;background:linear-gradient(135deg,#0070f3 0%,#00d9ff 50%,#0070f3 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradientShift 3s linear infinite}
+.hero-text p{font-size:1.25rem;color:#aaa;margin-bottom:2rem;line-height:1.8}
+.hero-text .tagline{font-size:1.5rem;color:#0070f3;margin-bottom:1rem;font-weight:600}
+.btn{display:inline-block;padding:18px 40px;background:linear-gradient(135deg,#0070f3,#0051cc);color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:1.125rem;transition:all 0.3s;position:relative;overflow:hidden;animation:pulse 2s ease-in-out infinite}
+.btn:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,112,243,0.4)}
+.dashboard-mockup{background:#0a0a0a;border:2px solid #1a1a2e;border-radius:16px;padding:1.5rem;box-shadow:0 20px 60px rgba(0,112,243,0.2);position:relative;animation:float 6s ease-in-out infinite}
+.dashboard-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #1a1a2e}
+.dashboard-title{font-size:1rem;font-weight:600;color:#0070f3}
+.dashboard-stats{display:flex;gap:1.5rem;font-size:0.875rem}
+.stat{color:#888}
+.stat span{color:#00ff88;font-weight:700}
+.camera-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem}
+.camera-feed{aspect-ratio:16/9;background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border-radius:8px;position:relative;overflow:hidden}
+.detection-box{position:absolute;border:3px solid #00ff88;border-radius:6px;animation:detectBox 1s ease-out;box-shadow:0 0 15px rgba(0,255,136,0.6)}
+.detection-label{position:absolute;top:4px;left:4px;background:#00ff88;color:#000;padding:4px 10px;border-radius:4px;font-size:0.85rem;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+.timeline{height:40px;background:#0a0a0a;border-radius:8px;position:relative;overflow:hidden}
+.timeline-progress{height:100%;background:linear-gradient(90deg,#0070f3,#00d9ff);width:60%;border-radius:8px;position:relative}
+.zone-overlay{position:absolute;border:2px dashed rgba(255,68,68,0.6);background:rgba(255,68,68,0.1);border-radius:4px;pointer-events:none;z-index:1}
+.zone-label{position:absolute;top:-24px;left:0;background:rgba(255,68,68,0.9);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700}
+.motion-trail{position:absolute;border:1px solid;border-radius:2px;opacity:0.3;pointer-events:none;transition:opacity 0.5s}
+.heatmap-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 50% 50%,rgba(0,112,243,0.15),transparent 60%);opacity:0;animation:heatmapPulse 8s ease-in-out infinite;pointer-events:none;border-radius:8px}
+@keyframes heatmapPulse{0%,100%{opacity:0}50%{opacity:1}}
+.event-feed{background:#0a0a0a;border:1px solid #1a1a2e;border-radius:12px;padding:1rem;max-height:400px;overflow-y:auto;font-size:0.85rem}
+.event-feed::-webkit-scrollbar{width:6px}
+.event-feed::-webkit-scrollbar-track{background:#0a0a0a}
+.event-feed::-webkit-scrollbar-thumb{background:#1a1a2e;border-radius:3px}
+.event-item{padding:0.75rem;margin-bottom:0.5rem;background:#0a0a1a;border-left:3px solid #0070f3;border-radius:4px;display:flex;align-items:center;gap:0.75rem;animation:slideInRight 0.3s ease-out}
+.event-item.alert{border-left-color:#ff4444}
+.event-time{color:#888;font-size:0.75rem;min-width:70px}
+.event-text{color:#fff;flex:1}
+.event-icon{font-size:1.2rem}
+.particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:1}
+.particle{position:absolute;width:4px;height:4px;background:#0070f3;border-radius:50%;opacity:0.3;animation:float 20s infinite}
+.features{background:#0a0a0a;position:relative}
+.section-title{font-size:3.5rem;font-weight:800;text-align:center;margin-bottom:1rem;background:linear-gradient(135deg,#0070f3 0%,#00d9ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.section-subtitle{text-align:center;color:#888;font-size:1.25rem;margin-bottom:4rem}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+.feature-card{background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #1a1a2e;border-radius:16px;padding:2.5rem;transition:all 0.4s;position:relative;overflow:hidden}
+.feature-card:hover{transform:translateY(-12px) rotateX(5deg);border-color:#0070f3;box-shadow:0 20px 60px rgba(0,112,243,0.3)}
+.feature-icon{font-size:3.5rem;margin-bottom:1.5rem;display:inline-block;animation:float 3s ease-in-out infinite}
+.feature-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem;color:#fff}
+.feature-desc{color:#aaa;line-height:1.8;font-size:1.05rem}
+.feature-badge{display:inline-block;background:#0070f3;color:#fff;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;margin-top:0.5rem}
+.problem{background:#000}
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.problem-card{text-align:center;padding:2rem}
+.problem-icon{font-size:4rem;margin-bottom:1rem;opacity:0.8}
+.problem-title{font-size:1.5rem;font-weight:700;margin-bottom:0.75rem;color:#ff4444}
+.problem-desc{color:#888;line-height:1.8}
+.how-it-works{background:#0a0a0a}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:3rem;margin-top:3rem;position:relative}
+.step{text-align:center;position:relative;z-index:1}
+.step-number{width:120px;height:120px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#0070f3,#00d9ff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:800;box-shadow:0 10px 40px rgba(0,112,243,0.4)}
+.step-title{font-size:1.75rem;font-weight:700;margin-bottom:1rem}
+.step-desc{color:#aaa;line-height:1.8;font-size:1.05rem}
+.roadmap{background:#000}
+.roadmap-container{max-width:900px;margin:3rem auto 0}
+.roadmap-item{display:flex;gap:2.5rem;margin-bottom:3rem;position:relative;padding-left:3rem}
+.roadmap-status{font-size:3rem;flex-shrink:0;width:60px;height:60px;display:flex;align-items:center;justify-content:center;background:#0a0a1a;border-radius:50%;border:3px solid #0070f3}
+.roadmap-content h3{font-size:2rem;margin-bottom:0.75rem}
+.phase-status{display:inline-block;padding:6px 16px;border-radius:20px;font-size:0.875rem;font-weight:700;margin-left:1rem}
+.status-live{background:#00ff88;color:#000}
+.status-progress{background:#0070f3;color:#fff}
+.status-planned{background:#333;color:#888}
+.roadmap-content p{color:#aaa;line-height:1.8;font-size:1.05rem;margin-top:0.5rem}
+.cta{background:linear-gradient(135deg,#0070f3 0%,#00d9ff 100%);text-align:center;position:relative;overflow:hidden}
+.cta h2{font-size:3.5rem;font-weight:800;margin-bottom:1rem;position:relative}
+.cta p{font-size:1.5rem;margin-bottom:2.5rem;opacity:0.95;position:relative}
+.cta .btn{background:#000;color:#fff}
+.footer{background:#0a0a0a;padding:4rem 0 2rem;text-align:center;border-top:1px solid #1a1a2e}
+.footer-logo{font-size:2rem;font-weight:800;margin-bottom:1rem;background:linear-gradient(135deg,#0070f3,#00d9ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.fade-in{opacity:0;transform:translateY(40px);transition:opacity 0.8s,transform 0.8s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+@media (max-width:1024px){
+.hero-content{grid-template-columns:1fr}
+.feature-grid{grid-template-columns:repeat(2,1fr)}
+.steps{grid-template-columns:1fr}
+}
+@media (max-width:768px){
+.hero-text h1{font-size:3rem}
+.section-title{font-size:2.5rem}
+.feature-grid{grid-template-columns:1fr}
+.problem-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO SECTION -->
+<section class="hero">
+<div class="particles">
+<div class="particle" style="top:20%;left:10%"></div>
+<div class="particle" style="top:40%;left:30%"></div>
+<div class="particle" style="top:60%;left:50%"></div>
+<div class="particle" style="top:30%;left:70%"></div>
+<div class="particle" style="top:70%;left:90%"></div>
+</div>
+<div class="container">
+<div class="hero-content">
+<div class="hero-text">
+<div class="tagline">AI-Powered Video Surveillance</div>
+<h1>AIVMS</h1>
+<p style="font-size:1.75rem;font-weight:600;color:#fff;margin-bottom:1.5rem">Protect Your Dealership 24/7</p>
+<p>Intelligent detection, instant alerts, and complete coverage. No false alarms. No blind spots. Built specifically for car dealerships.</p>
+<div style="display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap">
+<a href="mailto:contact@aivms.ai?subject=Demo Request" class="btn">Request Demo</a>
+<a href="#features" style="padding:18px 40px;color:#0070f3;text-decoration:none;border:2px solid #0070f3;border-radius:12px;font-weight:700;transition:all 0.3s" onmouseover="this.style.background='#0070f3';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#0070f3'">Learn More</a>
+</div>
+<div style="margin-top:3rem;display:flex;gap:3rem;flex-wrap:wrap">
+<div><div style="font-size:2.5rem;font-weight:800;color:#0070f3">68 FPS</div><div style="color:#888;font-size:0.9rem">Detection Speed</div></div>
+<div><div style="font-size:2.5rem;font-weight:800;color:#00ff88">95%+</div><div style="color:#888;font-size:0.9rem">Accuracy</div></div>
+<div><div style="font-size:2.5rem;font-weight:800;color:#00d9ff">24/7</div><div style="color:#888;font-size:0.9rem">Recording</div></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:1.5rem">
+<div class="dashboard-mockup">
+<div class="dashboard-header">
+<div class="dashboard-title">🎯 Live Dashboard</div>
+<div class="dashboard-stats">
+<div class="stat">Processing: <span id="fps-counter" style="color:#00ff88">68</span> FPS</div>
+<div class="stat">Today: <span id="detection-counter" style="color:#00d9ff">1,247</span> detections</div>
+<div class="stat">Active: <span style="color:#00ff88">4</span> cameras</div>
+</div>
+</div>
+<div class="camera-grid">
+<div class="camera-feed" id="cam1" style="position:relative">
+<div class="heatmap-overlay"></div>
+<div class="zone-overlay" style="top:15%;left:10%;width:40%;height:50%">
+<div class="zone-label">⚠️ Restricted</div>
+</div>
+<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.75rem;color:#00ff88;font-weight:600;z-index:10">● Front Lot</div>
+<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.7rem;color:#888;z-index:10">12:34:56 PM</div>
+<div class="detection-box" style="top:40%;left:15%;width:24%;height:42%;animation-delay:0.5s;z-index:5">
+<div class="detection-label">Person 96%</div>
+</div>
+<div class="detection-box" style="top:45%;left:50%;width:38%;height:32%;animation-delay:0.8s;border-color:#00d9ff;z-index:5">
+<div class="detection-label" style="background:#00d9ff">Car 98%</div>
+</div>
+</div>
+<div class="camera-feed" id="cam2" style="position:relative">
+<div class="heatmap-overlay" style="animation-delay:2s"></div>
+<div class="zone-overlay" style="top:20%;left:50%;width:45%;height:60%">
+<div class="zone-label">⚠️ Service Area</div>
+</div>
+<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.75rem;color:#00ff88;font-weight:600;z-index:10">● Service Bay</div>
+<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.7rem;color:#888;z-index:10">12:34:56 PM</div>
+<div class="detection-box" style="top:38%;left:18%;width:26%;height:45%;animation-delay:1s;z-index:5">
+<div class="detection-label">Person 94%</div>
+</div>
+<div class="detection-box" style="top:42%;left:55%;width:36%;height:35%;animation-delay:1.3s;border-color:#00d9ff;z-index:5">
+<div class="detection-label" style="background:#00d9ff">Truck 97%</div>
+</div>
+</div>
+<div class="camera-feed" id="cam3" style="position:relative">
+<div class="heatmap-overlay" style="animation-delay:4s"></div>
+<div class="zone-overlay" style="top:10%;left:30%;width:50%;height:55%">
+<div class="zone-label">⚠️ After Hours</div>
+</div>
+<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.75rem;color:#00ff88;font-weight:600;z-index:10">● Back Entrance</div>
+<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.7rem;color:#888;z-index:10">12:34:56 PM</div>
+<div class="detection-box" style="top:40%;left:32%;width:28%;height:48%;animation-delay:1.5s;z-index:5">
+<div class="detection-label">Person 93%</div>
+</div>
+</div>
+<div class="camera-feed" id="cam4" style="position:relative">
+<div class="heatmap-overlay" style="animation-delay:6s"></div>
+<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.75rem;color:#00ff88;font-weight:600;z-index:10">● Showroom</div>
+<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:4px 8px;border-radius:4px;font-size:0.7rem;color:#888;z-index:10">12:34:56 PM</div>
+</div>
+</div>
+<div class="timeline">
+<div class="timeline-progress"></div>
+</div>
+</div>
+<div class="event-feed">
+<div style="font-weight:700;margin-bottom:1rem;color:#0070f3;font-size:0.9rem">📊 Live Event Feed</div>
+<div id="event-feed-container">
+<div class="event-item">
+<div class="event-time">12:34:56</div>
+<div class="event-icon">🚗</div>
+<div class="event-text">Car detected in Front Lot (98%)</div>
+</div>
+<div class="event-item">
+<div class="event-time">12:34:54</div>
+<div class="event-icon">👤</div>
+<div class="event-text">Person detected in Service Bay (96%)</div>
+</div>
+<div class="event-item alert">
+<div class="event-time">12:34:52</div>
+<div class="event-icon">⚠️</div>
+<div class="event-text">Person entered restricted zone</div>
+</div>
+<div class="event-item">
+<div class="event-time">12:34:48</div>
+<div class="event-icon">🚙</div>
+<div class="event-text">Truck detected in Service Bay (97%)</div>
+</div>
+<div class="event-item">
+<div class="event-time">12:34:45</div>
+<div class="event-icon">👤</div>
+<div class="event-text">Person detected in Back Entrance (93%)</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- PROBLEM SECTION -->
+<section class="section problem">
+<div class="container">
+<h2 class="section-title fade-in">Traditional Security Falls Short</h2>
+<p class="section-subtitle fade-in">Car dealerships face unique security challenges</p>
+<div class="problem-grid">
+<div class="problem-card fade-in">
+<div class="problem-icon">🚨</div>
+<h3 class="problem-title">False Alarms</h3>
+<p class="problem-desc">Motion sensors trigger on wind, animals, and shadows. Your team wastes time investigating nothing.</p>
+</div>
+<div class="problem-card fade-in">
+<div class="problem-icon">💰</div>
+<h3 class="problem-title">Costly Theft</h3>
+<p class="problem-desc">Dealerships lose millions annually to theft and vandalism. Traditional cameras only record - they don't prevent.</p>
+</div>
+<div class="problem-card fade-in">
+<div class="problem-icon">👁️</div>
+<h3 class="problem-title">Blind Spots</h3>
+<p class="problem-desc">Can't monitor every corner 24/7. By the time you review footage, it's too late.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section class="section features" id="features">
+<div class="container">
+<h2 class="section-title fade-in">Powerful Features</h2>
+<p class="section-subtitle fade-in">Everything you need to protect your dealership</p>
+<div class="feature-grid">
+<div class="feature-card fade-in">
+<div class="feature-icon">🤖</div>
+<h3 class="feature-title">Intelligent AI Detection</h3>
+<p class="feature-desc">Recognizes people, vehicles, and 80+ object types with 95%+ accuracy. No more false alarms from trees or shadows.</p>
+<span class="feature-badge">Advanced Neural Networks</span>
+</div>
+<div class="feature-card fade-in">
+<div class="feature-icon">📹</div>
+<h3 class="feature-title">24/7 Recording</h3>
+<p class="feature-desc">Never miss a moment. Automatic retention management keeps 7-30 days of footage without manual intervention.</p>
+<span class="feature-badge">Auto-Managed</span>
+</div>
+<div class="feature-card fade-in">
+<div class="feature-icon">🎯</div>
+<h3 class="feature-title">Custom Zones</h3>
+<p class="feature-desc">Define restricted areas like service bays or inventory lots. Get instant alerts when someone enters after hours.</p>
+<span class="feature-badge">Geo-Fencing</span>
+</div>
+<div class="feature-card fade-in">
+<div class="feature-icon">⚡</div>
+<h3 class="feature-title">Real-Time Alerts</h3>
+<p class="feature-desc">Know immediately when something happens. Smart notifications only when it matters - no spam.</p>
+<span class="feature-badge">Instant</span>
+</div>
+<div class="feature-card fade-in">
+<div class="feature-icon">📊</div>
+<h3 class="feature-title">Analytics Dashboard</h3>
+<p class="feature-desc">Track patterns, monitor activity, and gain insights into your dealership operations with beautiful visualizations.</p>
+<span class="feature-badge">Real-Time</span>
+</div>
+<div class="feature-card fade-in">
+<div class="feature-icon">☁️</div>
+<h3 class="feature-title">Cloud Access</h3>
+<p class="feature-desc">Access your cameras from anywhere. Multi-site management for dealership groups.</p>
+<span class="feature-badge" style="background:#666">Coming soon...</span>
+</div>
+</div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section how-it-works">
+<div class="container">
+<h2 class="section-title fade-in">How It Works</h2>
+<p class="section-subtitle fade-in">Get up and running in 3 simple steps</p>
+<div class="steps">
+<div class="step fade-in">
+<div class="step-number">1</div>
+<h3 class="step-title">Install Edge Device</h3>
+<p class="step-desc">Plug in our compact edge device. Connects to your existing cameras via RTSP. Setup in under 30 minutes.</p>
+</div>
+<div class="step fade-in">
+<div class="step-number">2</div>
+<h3 class="step-title">AI Detects Threats</h3>
+<p class="step-desc">Our AI processes video in real-time at 68 FPS, detecting people, vehicles, and suspicious activity instantly.</p>
+</div>
+<div class="step fade-in">
+<div class="step-number">3</div>
+<h3 class="step-title">Get Instant Alerts</h3>
+<p class="step-desc">Receive notifications when something important happens. Review footage with our intuitive timeline playback.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section roadmap">
+<div class="container">
+<h2 class="section-title fade-in">Development Roadmap</h2>
+<p class="section-subtitle fade-in">Our journey to the complete solution</p>
+<div class="roadmap-container">
+<div class="roadmap-item fade-in">
+<div class="roadmap-status">✅</div>
+<div class="roadmap-content">
+<h3>Phase 1: Edge Device<span class="phase-status status-live">Available Now</span></h3>
+<p>Complete edge computing solution with real-time AI detection and local processing. Deployed and running at 68 FPS with 95%+ accuracy.</p>
+<div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem">
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">✓ AI Detection & Tracking</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">✓ 24/7 Recording</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">✓ Zone Analytics</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">✓ Local Dashboard</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">✓ 68 FPS Performance</div>
+</div>
+</div>
+</div>
+<div class="roadmap-item fade-in">
+<div class="roadmap-status">⏳</div>
+<div class="roadmap-content">
+<h3>Phase 2: Cloud Platform<span class="phase-status status-progress">Coming Soon</span></h3>
+<p>Centralized cloud platform for multi-site management and advanced analytics. Access your cameras from anywhere in the world.</p>
+<div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem">
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Multi-Site Management</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Remote Access</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Cloud Backup</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Advanced Analytics</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Team Collaboration</div>
+</div>
+</div>
+</div>
+<div class="roadmap-item fade-in">
+<div class="roadmap-status">📋</div>
+<div class="roadmap-content">
+<h3>Phase 3: Mobile App<span class="phase-status status-planned">Coming Soon</span></h3>
+<p>Native mobile applications for iOS and Android with full feature parity. Monitor your dealership from your phone.</p>
+<div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1rem">
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">iOS & Android Apps</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Push Notifications</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Live Streaming</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">Instant Playback</div>
+<div style="background:#0a0a1a;border:1px solid #1a1a2e;padding:8px 16px;border-radius:8px;font-size:0.9rem;color:#888">On-the-Go Management</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- TEAM -->
+<section class="section" style="background:#0a0a0a">
+<div class="container">
+<h2 class="section-title fade-in">Meet the Team</h2>
+<p class="section-subtitle fade-in">Building the future of AI-powered surveillance</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:3rem;margin-top:3rem;max-width:1000px;margin-left:auto;margin-right:auto">
+<div class="fade-in" style="text-align:center;background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #1a1a2e;border-radius:16px;padding:3rem 2rem;transition:all 0.4s" onmouseover="this.style.transform='translateY(-12px)';this.style.borderColor='#0070f3';this.style.boxShadow='0 20px 60px rgba(0,112,243,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.borderColor='#1a1a2e';this.style.boxShadow='none'">
+<div style="width:120px;height:120px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#0070f3,#00d9ff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:800;color:#fff;box-shadow:0 10px 40px rgba(0,112,243,0.4)">DV</div>
+<h3 style="font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;color:#fff">Dylan Varughese</h3>
+<p style="color:#0070f3;font-weight:600;margin-bottom:1rem">Co-Founder & CEO</p>
+</div>
+<div class="fade-in" style="text-align:center;background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #1a1a2e;border-radius:16px;padding:3rem 2rem;transition:all 0.4s" onmouseover="this.style.transform='translateY(-12px)';this.style.borderColor='#0070f3';this.style.boxShadow='0 20px 60px rgba(0,112,243,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.borderColor='#1a1a2e';this.style.boxShadow='none'">
+<div style="width:120px;height:120px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#00d9ff,#0070f3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:800;color:#fff;box-shadow:0 10px 40px rgba(0,112,243,0.4)">SP</div>
+<h3 style="font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;color:#fff">Shresth Pal</h3>
+<p style="color:#0070f3;font-weight:600;margin-bottom:1rem">Founding Engineer</p>
+</div>
+<div class="fade-in" style="text-align:center;background:linear-gradient(135deg,#0a0a1a,#1a1a2e);border:1px solid #1a1a2e;border-radius:16px;padding:3rem 2rem;transition:all 0.4s" onmouseover="this.style.transform='translateY(-12px)';this.style.borderColor='#0070f3';this.style.boxShadow='0 20px 60px rgba(0,112,243,0.3)'" onmouseout="this.style.transform='translateY(0)';this.style.borderColor='#1a1a2e';this.style.boxShadow='none'">
+<div style="width:120px;height:120px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#0070f3,#00d9ff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:800;color:#fff;box-shadow:0 10px 40px rgba(0,112,243,0.4)">AV</div>
+<h3 style="font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;color:#fff">Aarush Verma</h3>
+<p style="color:#0070f3;font-weight:600;margin-bottom:1rem">Founding Engineer</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="section cta">
+<div class="container">
+<h2>Ready to Protect Your Dealership?</h2>
+<p>Join forward-thinking dealerships using AI-powered surveillance</p>
+<a href="mailto:contact@aivms.ai?subject=Demo Request&body=Hi, I am interested in learning more about AIVMS for my dealership.%0D%0A%0D%0ADealership Name:%0D%0ALocation:%0D%0ANumber of Cameras:%0D%0A%0D%0AThank you!" class="btn">Request a Demo</a>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+<div class="container">
+<div class="footer-logo">AIVMS</div>
+<p style="color:#888;margin-bottom:1.5rem">AI-Powered Video Surveillance for Car Dealerships</p>
+<p style="color:#888;margin-bottom:2rem">📧 <a href="mailto:contact@aivms.ai" style="color:#0070f3;text-decoration:none;font-weight:600">contact@aivms.ai</a></p>
+<p style="color:#666;font-size:0.875rem;padding-top:2rem;border-top:1px solid #1a1a2e">© 2026 AIVMS. All rights reserved.</p>
+</div>
+</footer>
+
+<script>
+// Scroll animations
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll('.fade-in').forEach(el => {
+  observer.observe(el);
+});
+
+// Counter animation - realistic daily detection count
+let detectionCount = 1247; // Starting count for "today"
+setInterval(() => {
+  detectionCount += Math.floor(Math.random() * 3); // Increment by 0-2
+  const counter = document.getElementById('detection-counter');
+  if (counter) counter.textContent = detectionCount.toLocaleString(); // Format with commas
+}, 3000); // Update every 3 seconds
+
+// FPS counter animation - realistic 60+ FPS
+let fps = 68;
+setInterval(() => {
+  fps = 65 + Math.floor(Math.random() * 8); // 65-72 FPS (realistic range)
+  const fpsCounter = document.getElementById('fps-counter');
+  if (fpsCounter) fpsCounter.textContent = fps;
+}, 1500); // Update every 1.5 seconds
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Add detection boxes dynamically - WITH MOTION TRAILS
+function addDetectionBox(camId) {
+  const cam = document.getElementById(camId);
+  if (!cam) return;
+
+  // Count existing detection boxes (excluding labels and timestamps)
+  const existingBoxes = cam.querySelectorAll('.detection-box').length;
+  if (existingBoxes >= 2) return; // Max 2 detections per camera (they're bigger now!)
+
+  const box = document.createElement('div');
+  box.className = 'detection-box';
+
+  // Define realistic detection types - OPTIMIZED SIZES (visible but not overwhelming)
+  const detectionTypes = [
+    { type: 'Person', color: '#00ff88', minW: 18, maxW: 28, minH: 35, maxH: 48, conf: [92, 98], icon: '👤' },
+    { type: 'Car', color: '#00d9ff', minW: 30, maxW: 45, minH: 22, maxH: 35, conf: [94, 99], icon: '🚗' },
+    { type: 'Truck', color: '#00d9ff', minW: 35, maxW: 48, minH: 25, maxH: 38, conf: [93, 98], icon: '🚙' },
+    { type: 'Person', color: '#00ff88', minW: 16, maxW: 26, minH: 32, maxH: 45, conf: [90, 97], icon: '👤' },
+    { type: 'SUV', color: '#00d9ff', minW: 32, maxW: 46, minH: 24, maxH: 36, conf: [95, 99], icon: '🚗' }
+  ];
+
+  const detection = detectionTypes[Math.floor(Math.random() * detectionTypes.length)];
+
+  // Smart positioning - AVOID TOP AREA (labels/timestamps) and edges
+  let top = Math.random() * 35 + 35; // 35-70% (avoid top 35% where labels are)
+  let left = Math.random() * 50 + 20; // 20-70% (centered area)
+  const width = Math.random() * (detection.maxW - detection.minW) + detection.minW;
+  const height = Math.random() * (detection.maxH - detection.minH) + detection.minH;
+  const confidence = Math.floor(Math.random() * (detection.conf[1] - detection.conf[0] + 1)) + detection.conf[0];
+
+  box.style.top = top + '%';
+  box.style.left = left + '%';
+  box.style.width = width + '%';
+  box.style.height = height + '%';
+  box.style.borderColor = detection.color;
+  box.style.animationDelay = '0s';
+  box.style.zIndex = '5';
+
+  const label = document.createElement('div');
+  label.className = 'detection-label';
+  label.style.background = detection.color;
+  label.textContent = detection.type + ' ' + confidence + '%';
+  box.appendChild(label);
+
+  cam.appendChild(box);
+
+  // Add motion trail effect
+  const moveBox = () => {
+    const moveX = (Math.random() - 0.5) * 8; // Move -4% to +4%
+    const moveY = (Math.random() - 0.5) * 6; // Move -3% to +3%
+
+    // Create trail
+    const trail = document.createElement('div');
+    trail.className = 'motion-trail';
+    trail.style.top = box.style.top;
+    trail.style.left = box.style.left;
+    trail.style.width = box.style.width;
+    trail.style.height = box.style.height;
+    trail.style.borderColor = detection.color;
+    trail.style.zIndex = '2';
+    cam.appendChild(trail);
+
+    // Fade out trail
+    setTimeout(() => trail.remove(), 500);
+
+    // Move box
+    top += moveY;
+    left += moveX;
+    box.style.top = top + '%';
+    box.style.left = left + '%';
+    box.style.transition = 'top 0.5s, left 0.5s';
+  };
+
+  // Move every 500ms
+  const moveInterval = setInterval(moveBox, 500);
+
+  // Add to event feed
+  addEventToFeed(detection.type, confidence, detection.icon, camId);
+
+  // Remove after 2.5-4 seconds (varied timing)
+  const duration = 2500 + Math.random() * 1500;
+  setTimeout(() => {
+    clearInterval(moveInterval);
+    if (box.parentNode) {
+      box.style.opacity = '0';
+      box.style.transition = 'opacity 0.3s';
+      setTimeout(() => box.remove(), 300);
+    }
+  }, duration);
+}
+
+// Add event to live feed
+const cameraNames = {
+  'cam1': 'Front Lot',
+  'cam2': 'Service Bay',
+  'cam3': 'Back Entrance',
+  'cam4': 'Showroom'
+};
+
+function addEventToFeed(type, confidence, icon, camId) {
+  const feedContainer = document.getElementById('event-feed-container');
+  if (!feedContainer) return;
+
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const eventItem = document.createElement('div');
+  eventItem.className = 'event-item';
+
+  // Check if detection is in restricted zone (random chance)
+  const inRestrictedZone = Math.random() < 0.15; // 15% chance
+  if (inRestrictedZone && type === 'Person') {
+    eventItem.classList.add('alert');
+    eventItem.innerHTML = `
+      <div class="event-time">${timeString}</div>
+      <div class="event-icon">⚠️</div>
+      <div class="event-text">Person entered restricted zone in ${cameraNames[camId]}</div>
+    `;
+  } else {
+    eventItem.innerHTML = `
+      <div class="event-time">${timeString}</div>
+      <div class="event-icon">${icon}</div>
+      <div class="event-text">${type} detected in ${cameraNames[camId]} (${confidence}%)</div>
+    `;
+  }
+
+  // Add to top of feed
+  feedContainer.insertBefore(eventItem, feedContainer.firstChild);
+
+  // Keep only last 10 events
+  while (feedContainer.children.length > 10) {
+    feedContainer.removeChild(feedContainer.lastChild);
+  }
+}
+
+// Randomly add detection boxes - more frequent and realistic
+setInterval(() => {
+  const cams = ['cam1', 'cam2', 'cam3', 'cam4'];
+  const randomCam = cams[Math.floor(Math.random() * cams.length)];
+  addDetectionBox(randomCam);
+}, 2500); // Every 2.5 seconds
+
+// Initial burst of detections
+setTimeout(() => {
+  addDetectionBox('cam1');
+  addDetectionBox('cam2');
+  addDetectionBox('cam3');
+}, 1000);
+
+// Update timestamps in real-time
+function updateTimestamps() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  document.querySelectorAll('.camera-feed').forEach(feed => {
+    const timestamp = feed.querySelector('[style*="right:8px"]');
+    if (timestamp && timestamp.textContent.includes('PM') || timestamp.textContent.includes('AM')) {
+      timestamp.textContent = timeString;
+    }
+  });
+}
+
+// Update timestamps every second
+setInterval(updateTimestamps, 1000);
+updateTimestamps(); // Initial update
+
+console.log('🚀 AIVMS Premium Landing Page v3.0 Loaded');
+console.log('✨ All animations active');
+console.log('📊 Dashboard mockup with motion tracking');
+console.log('🎯 Zone overlays active');
+console.log('📡 Live event feed running');
+console.log('🔥 Heatmap overlays pulsing');
+</script>
+
+</body>
+</html>

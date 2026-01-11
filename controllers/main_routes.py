@@ -27,6 +27,11 @@ def create_blueprint(camera_manager, nvr_ip, recording_engine=None):
     def index():
         return main_bp.send_static_file('index.html')
 
+    @main_bp.route('/landing')
+    @main_bp.route('/landing.html')
+    def landing():
+        return main_bp.send_static_file('landing.html')
+
     @main_bp.route('/dashboard.html')
     def dashboard():
         return main_bp.send_static_file('dashboard.html')
