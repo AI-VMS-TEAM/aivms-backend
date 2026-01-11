@@ -27,8 +27,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='../public', static_url_path='')
+# Initialize Flask app with static folder for web UI
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config['SECRET_KEY'] = os.environ.get('CLOUD_SECRET_KEY', 'cloud-secret-key-change-me')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 CORS(app)
@@ -55,6 +55,7 @@ def initialize_services():
     # Initialize tenant service
     tenant_service = TenantService(db_path=config.db_path)
     set_tenant_service(tenant_service)
+    app.config['tenant_service'] = tenant_service
     logger.info("✅ Tenant service initialized")
     
     # Initialize event service
@@ -63,6 +64,7 @@ def initialize_services():
         clip_storage_path=config.clip_storage_path
     )
     set_event_service(event_service)
+    app.config['event_service'] = event_service
     logger.info("✅ Event service initialized")
     
     # Initialize alert service
@@ -70,6 +72,7 @@ def initialize_services():
         db_path=config.db_path,
         event_service=event_service
     )
+    app.config['alert_service'] = alert_service
     logger.info("✅ Alert service initialized")
     
     # Initialize edge manager (handles edge box connections)
@@ -80,6 +83,7 @@ def initialize_services():
         alert_service=alert_service
     )
     set_edge_manager(edge_manager)
+    app.config['edge_manager'] = edge_manager
     logger.info("✅ Edge manager initialized")
     
     logger.info("✅ Cloud initialization complete")
