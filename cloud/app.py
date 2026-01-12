@@ -66,8 +66,8 @@ def initialize_services():
     
     # Initialize alert service
     alert_service = AlertService(
-        db_path=config.db_path,
-        event_service=event_service
+        event_service=event_service,
+        config=config
     )
     app.config['alert_service'] = alert_service
     logger.info("✅ Alert service initialized")
