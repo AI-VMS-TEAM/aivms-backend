@@ -684,7 +684,7 @@ EDGE_SECRET=<span id="cred-edge-secret-2"></span></code></pre>
                 }
                 
                 // Load edges
-                const edgesData = await api('/api/tenant/edges');
+                const edgesData = await api('/api/tenants/edges');
                 if (edgesData?.edges) {
                     document.getElementById('stat-edges').textContent = edgesData.edges.length;
                 }
@@ -745,7 +745,7 @@ EDGE_SECRET=<span id="cred-edge-secret-2"></span></code></pre>
 
         // Edge Devices
         async function loadEdges() {
-            const data = await api('/api/tenant/edges');
+            const data = await api('/api/tenants/edges');
             const tbody = document.getElementById('edges-list');
             
             if (!data?.edges || data.edges.length === 0) {
@@ -784,7 +784,7 @@ EDGE_SECRET=<span id="cred-edge-secret-2"></span></code></pre>
                 return;
             }
             
-            const data = await api('/api/tenant/edges', {
+            const data = await api('/api/tenants/edges', {
                 method: 'POST',
                 body: JSON.stringify({ name, location })
             });
@@ -810,7 +810,7 @@ EDGE_SECRET=<span id="cred-edge-secret-2"></span></code></pre>
         async function deleteEdge(edgeId) {
             if (!confirm('Are you sure you want to delete this edge device?')) return;
             
-            await api(`/api/tenant/edges/${edgeId}`, { method: 'DELETE' });
+            await api(`/api/tenants/edges/${edgeId}`, { method: 'DELETE' });
             loadEdges();
         }
 
