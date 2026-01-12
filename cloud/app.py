@@ -89,6 +89,10 @@ def initialize_services():
     logger.info("✅ Cloud initialization complete")
 
 
+# Initialize services at module load (for gunicorn)
+initialize_services()
+
+
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(tenant_bp, url_prefix='/api/tenants')
@@ -208,7 +212,7 @@ def main():
     logger.info(f"  Database: {config.db_path}")
     logger.info("=" * 60)
     
-    initialize_services()
+    # Services already initialized at module load
     
     # Run with eventlet for better WebSocket performance
     socketio.run(
