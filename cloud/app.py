@@ -59,10 +59,7 @@ def initialize_services():
     logger.info("✅ Tenant service initialized")
     
     # Initialize event service
-    event_service = EventService(
-        db_path=config.db_path,
-        clip_storage_path=config.clip_storage_path
-    )
+    event_service = EventService(db_path=config.db_path)
     set_event_service(event_service)
     app.config['event_service'] = event_service
     logger.info("✅ Event service initialized")
