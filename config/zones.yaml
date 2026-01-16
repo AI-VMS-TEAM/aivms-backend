@@ -149,9 +149,9 @@ cameras:
           - foot_traffic
           - flow_direction
 
-  # ========================================
+  # =======================================
   # DAHUA FRONT CAM - PARKING (INACTIVE)
-  # ========================================
+  # =======================================
   dahua_front_cam:
     resolution: [1920, 1080]
     location: "Parking Lot"

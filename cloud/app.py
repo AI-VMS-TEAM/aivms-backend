@@ -192,7 +192,13 @@ def health_check():
 
 
 @app.route('/')
-def index():
+def landing():
+    """Serve landing page."""
+    return app.send_static_file('landing.html')
+
+
+@app.route('/dashboard')
+def dashboard():
     """Serve dashboard."""
     return app.send_static_file('index.html')
 
